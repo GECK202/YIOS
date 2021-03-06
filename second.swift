@@ -1,212 +1,217 @@
 import Foundation
 
-let NONE:Int = 0
-let SHIP:Int = 1
-let FIRE:Int = 2
-let UPSS:Int = 3
-let STOP:Int = 4
-
-let HORZ:Int = 0
-let VERT:Int = 1
-
-let LEFT:Int = 0
-let RIGHT:Int = 1
-let UP:Int = 2
-let DOWN:Int = 3
-
-let DIR_RANGE = 0...3
-
-let FIGURE: [Int: String] = [
-NONE: ". ",
-SHIP: "# ",
-FIRE: "@ ",
-UPSS: "X ",
-STOP: ". "]
-
-let CLEAN_FIELD = [
-[0,0,0,0,0,0,0,0,0,0],
-[0,0,0,0,0,0,0,0,0,0],
-[0,0,0,0,0,0,0,0,0,0],
-[0,0,0,0,0,0,0,0,0,0],
-[0,0,0,0,0,0,0,0,0,0],
-[0,0,0,0,0,0,0,0,0,0],
-[0,0,0,0,0,0,0,0,0,0],
-[0,0,0,0,0,0,0,0,0,0],
-[0,0,0,0,0,0,0,0,0,0],
-[0,0,0,0,0,0,0,0,0,0],]
-
-let SHIPS_COUNT = [0,4,3,2,1]
-
 let TABLE_RANGE = 0...9
-let SIZE_RANGE = 1...4
+
+enum Cell {
+    case NONE
+    case SHIP
+    case FIRE
+    case UPSS
+    case STOP
+}
 
 struct Position {
     var x:Int = 0
     var y:Int = 0
 
-    let LET_TO_INT = [
-    "a":0, "A":0,
-    "b":1, "B":1,
-    "c":2, "C":2,
-    "d":3, "D":3,
-    "e":4, "E":4,
-    "f":5, "F":5,
-    "g":6, "G":6,
-    "h":7, "H":7,
-    "i":8, "I":8,
-    "j":9, "J":9,]
-    
-    init?(_ figure1:Int, _ figure2:Int) {
-        if !TABLE_RANGE.contains(figure1) || !TABLE_RANGE.contains(figure2) { return nil }
-        x = figure1 - 1
-        y = figure2 - 1
-    }
-    
-    init?(figure:Int, letter:String) {
-        if !TABLE_RANGE.contains(figure) ||
-            letter.count != 1 { return nil}
-        if let n:Int = LET_TO_INT[letter] {
-            x = n
-            y = figure - 1
-        } else {return nil}
+    init?(x:Int, y:Int) {
+        if !TABLE_RANGE.contains(x) || !TABLE_RANGE.contains(y) { return nil }
+        self.x = x - 1
+        self.y = y - 1
     }
 }
 
-let NOT_BULLET: [Character] = [" ", " ", " ", " ", " ", " ", " ", " "]
-var bullet: [Character] = NOT_BULLET
+final class UI {
+    static let instance:UI = {
+        let inst = UI()
+        return inst
+    }()
+    private init() {}
 
-func ShowField(_ player:ParticipanClass, fire:Int){
-    let space = " |        | "
-    var distance:String
-    print("       ПОЛЕ ИГРОКА     \(space)     ПОЛЕ ПРОТИВНИКА")
-    print("   a b c d e f g h i j \(space)   a b c d e f g h i j")
-    for j in 0...9 {
-        var slf = ""; var opp = ""
-        for i in 0...9 {
-            if let cfig:String = FIGURE[player.selfField[j][i]]{
-                slf += cfig
+    let NOT_BULLET: [Character] = [" ", " ", " ", " ", " ", " ", " ", " "]
+
+    let FIGURE: [Cell: String] = [
+        .NONE: ". ",
+        .SHIP: "# ",
+        .FIRE: "@ ",
+        .UPSS: "X ",
+        .STOP: ". "]
+
+    var bullet: [Character] = [" ", " ", " ", " ", " ", " ", " ", " "]
+    
+    var screenBuffer: [String] = [""]
+
+    private func Waves() {
+        
+    }
+
+    func ShowField(_ player:Participan, fire:Int){
+        let space = " |        | "
+        var distance:String
+        print("       ПОЛЕ ИГРОКА     \(space)     ПОЛЕ ПРОТИВНИКА")
+        print("   a b c d e f g h i j \(space)   a b c d e f g h i j")
+        for j in 0...9 {
+            var slf = ""; var opp = ""
+            for i in 0...9 {
+                if let cfig:String = FIGURE[player.selfField[j][i]]{
+                    slf += cfig
+                }
+                else {
+                    slf += "?!"
+                }
+                if let cfig:String = FIGURE[player.opponentField[j][i]]{
+                    opp += cfig
+                }
+                else {
+                    opp += "?!"
+                }
             }
-            else {
-                slf += "?!"
+            var number = String(j + 1)
+            if number.count == 1 {
+                number = " " + number
             }
-            if let cfig:String = FIGURE[player.opponentField[j][i]]{
-                opp += cfig
-            }
-            else {
-                opp += "?!"
-            }
+            if j == fire {
+                distance = " |" + String(bullet) + "| "
+            } else { distance = space }
+            print("\(number) \(slf)\(distance)\(number) \(opp)")
         }
-        var number = String(j + 1)
-        if number.count == 1 {
-            number = " " + number
-        }
-        if j == fire {
-            distance = " |" + String(bullet) + "| "
-        } else { distance = space }
-        print("\(number) \(slf)\(distance)\(number) \(opp)")
     }
 }
 
-class ParticipanClass {
-    var selfField = CLEAN_FIELD
-    var opponentField = CLEAN_FIELD
-    var shipsCount = SHIPS_COUNT
+extension UI: NSCopying {
+
+    func copy(with zone: NSZone? = nil) -> Any {
+        return self
+    }
+}
+
+class Participan {
+    static let CLEAN_FIELD: [[Cell]] = [
+        [.NONE,.NONE,.NONE,.NONE,.NONE,.NONE,.NONE,.NONE,.NONE,.NONE],
+        [.NONE,.NONE,.NONE,.NONE,.NONE,.NONE,.NONE,.NONE,.NONE,.NONE],
+        [.NONE,.NONE,.NONE,.NONE,.NONE,.NONE,.NONE,.NONE,.NONE,.NONE],
+        [.NONE,.NONE,.NONE,.NONE,.NONE,.NONE,.NONE,.NONE,.NONE,.NONE],
+        [.NONE,.NONE,.NONE,.NONE,.NONE,.NONE,.NONE,.NONE,.NONE,.NONE],
+        [.NONE,.NONE,.NONE,.NONE,.NONE,.NONE,.NONE,.NONE,.NONE,.NONE],
+        [.NONE,.NONE,.NONE,.NONE,.NONE,.NONE,.NONE,.NONE,.NONE,.NONE],
+        [.NONE,.NONE,.NONE,.NONE,.NONE,.NONE,.NONE,.NONE,.NONE,.NONE],
+        [.NONE,.NONE,.NONE,.NONE,.NONE,.NONE,.NONE,.NONE,.NONE,.NONE],
+        [.NONE,.NONE,.NONE,.NONE,.NONE,.NONE,.NONE,.NONE,.NONE,.NONE]]
+    
+    static let SHIPS_COUNT = [0,4,3,2,1]
+    
+ 
+    static let SIZE_RANGE = 1...4
+    
+    enum Direction: CaseIterable {
+        case LEFT
+        case RIGHT
+        case UP
+        case DOWN
+    }
+    
+    enum Orient: CaseIterable {
+        case HORIZONTAL
+        case VERTICAL
+    }
+    
+    var selfField = Participan.CLEAN_FIELD
+    var opponentField = Participan.CLEAN_FIELD
+    var shipsCount = Participan.SHIPS_COUNT
     var lastMove:Position? = nil
     var goodLastMove:Position? = nil
-    var curDirection:Int = Int.random(in: DIR_RANGE)
+    var curDirection = Direction.allCases.randomElement()!
     
     init() {
         clean()
         randomSetShips()
     }
     
-    func checkStartPosition(_ x:Int, _ y:Int, _ size:Int, _ orient:Int)-> Bool {
-        if orient == HORZ {
-            if x + size > 10 {
-                return false
-            }
-            for i in x...(x + size - 1) {
-                if selfField[y][i] != NONE {
+    func checkStartPosition(_ x:Int, _ y:Int, _ size:Int, _ orient:Participan.Orient)-> Bool {
+        switch (orient) { 
+            case .HORIZONTAL:
+                if x + size > 10 {
                     return false
                 }
-            }
-            return true
-        }
-        else if orient == VERT {
-            if y + size > 10 {
-                return false
-            }
-            for i in y...(y + size - 1) {
-                if selfField[i][x] != NONE {
+                for i in x...(x + size - 1) {
+                    if selfField[y][i] != Cell.NONE {
+                     return false
+                    }
+                }
+                return true
+            case .VERTICAL:
+                if y + size > 10 {
                     return false
                 }
-            }
-            return true
+                for i in y...(y + size - 1) {
+                    if selfField[i][x] != Cell.NONE {
+                        return false
+                    }
+                }
+                return true
         }
-        return false
     }
     
-    func addShip(_ x:Int, _ y:Int, _ size:Int, _ orient:Int = HORZ)-> Bool {
-        if !TABLE_RANGE.contains(size) ||
+    func addShip(_ x:Int, _ y:Int, _ size:Int, _ orient:Orient = .HORIZONTAL)-> Bool {
+        if !Participan.SIZE_RANGE.contains(size) ||
             !TABLE_RANGE.contains(x) ||
             !TABLE_RANGE.contains(y) ||
             shipsCount[size] == 0 ||
-            selfField[y][x] != NONE ||
+            selfField[y][x] != .NONE ||
             (!checkStartPosition(x, y, size, orient)) {
                 return false
         }
-        if orient == HORZ {
-            for j in (y - 1)...(y + 1) {
-                if !TABLE_RANGE.contains(j) { continue }
-                for i in (x - 1)...(x + size) {
-                    if !TABLE_RANGE.contains(i) { continue }
-                    if j == y && i >= x && i < x + size {
-                        selfField[j][i] = SHIP
-                    } else {
-                        selfField[j][i] = STOP
-                    }
-                }
-            }
-            shipsCount[size] -= 1
-            return true
-        }
-        else if orient == VERT {
-            for i in (x - 1)...(x + 1) {
-                if !TABLE_RANGE.contains(i) { continue }
-                for j in (y - 1)...(y + size) {
+        switch (orient) { 
+            case .HORIZONTAL:
+                for j in (y - 1)...(y + 1) {
                     if !TABLE_RANGE.contains(j) { continue }
-                    if i == x && j >= y && j < y + size {
-                        selfField[j][i] = SHIP
-                    } else {
-                        selfField[j][i] = STOP
+                    for i in (x - 1)...(x + size) {
+                        if !TABLE_RANGE.contains(i) { continue }
+                        if j == y && i >= x && i < x + size {
+                            selfField[j][i] = Cell.SHIP
+                        } else {
+                            selfField[j][i] = Cell.STOP
+                        }
                     }
                 }
-            }
-            shipsCount[size] -= 1
-            return true
+                shipsCount[size] -= 1
+                return true
+            case .VERTICAL:
+                for i in (x - 1)...(x + 1) {
+                    if !TABLE_RANGE.contains(i) { continue }
+                    for j in (y - 1)...(y + size) {
+                        if !TABLE_RANGE.contains(j) { continue }
+                        if i == x && j >= y && j < y + size {
+                            selfField[j][i] = Cell.SHIP
+                        } else {
+                            selfField[j][i] = Cell.STOP
+                        }
+                    }
+                }
+                shipsCount[size] -= 1
+                return true
         }
-        return false
     }
     
     func clean() {
-        opponentField = CLEAN_FIELD
-        shipsCount = SHIPS_COUNT
-        selfField = CLEAN_FIELD
+        opponentField = Participan.CLEAN_FIELD
+        shipsCount = Participan.SHIPS_COUNT
+        selfField = Participan.CLEAN_FIELD
         lastMove = nil
         goodLastMove = nil
-        curDirection = Int.random(in: DIR_RANGE)
+        curDirection = Direction.allCases.randomElement()!
     }
     
     func randomSetShips() {
         while (true){
             var index = 4
-            shipsCount = SHIPS_COUNT
-            selfField = CLEAN_FIELD
+            shipsCount = Participan.SHIPS_COUNT
+            selfField = Participan.CLEAN_FIELD
             for _ in 0...1000 {
                 let x:Int = Int.random(in: TABLE_RANGE)
                 let y:Int = Int.random(in: TABLE_RANGE)
-                let size:Int = Int.random(in: SIZE_RANGE)
-                let orient:Int = Int.random(in: 0...1)
+                let size:Int = Int.random(in: Participan.SIZE_RANGE)
+                let orient = Orient.allCases.randomElement()!
                 let _ = addShip(x, y, size, orient)
                 if shipsCount[index] == 0 {
                     index -= 1
@@ -223,9 +228,9 @@ class ParticipanClass {
             for _ in 0...1000 {
                 let x:Int = Int.random(in: TABLE_RANGE)
                 let y:Int = Int.random(in: TABLE_RANGE)
-                lastMove = Position(x, y)
+                lastMove = Position(x:x, y:y)
                 if lastMove != nil {
-                    if opponentField[lastMove!.y][lastMove!.x] == NONE {
+                    if opponentField[lastMove!.y][lastMove!.x] == .NONE {
                         return lastMove
                     }
                 }
@@ -233,8 +238,8 @@ class ParticipanClass {
             return nil
         }
         switch curDirection {
-            case LEFT:
-            if lastMove!.x > 1 && opponentField[lastMove!.y][lastMove!.x - 1] == NONE {
+            case .LEFT:
+            if lastMove!.x > 1 && opponentField[lastMove!.y][lastMove!.x - 1] == .NONE {
                 lastMove!.x += 1
                 return lastMove
             }
@@ -244,8 +249,30 @@ class ParticipanClass {
     }
 }
 
-let player = ParticipanClass()
+class Game {
+    enum Step:CaseIterable {
+        case player
+        case opponent
+    }
+    
+    let player: Participan
+    let opponent: Participan
+    var currentStep: Step
+    
+    init(player:Participan, opponent:Participan) {
+        self.player = player
+        self.opponent = opponent
+        currentStep = Step.allCases.randomElement()!
+    }
+}
+
+let player = Participan()
 player.randomSetShips()
+
+let opponent = Participan()
+opponent.randomSetShips()
+
+let game = Game(player:player, opponent:opponent)
 //ShowField(player)
 //print()
 //ShowField(player)
@@ -294,13 +321,31 @@ for _ in 0...300 {
     usleep(500000)
 }
 */
-//let d=0
+let ui = UI.instance
 var y = 5
 for i in 0...9 {
     let dj = Int(4 * sin(Double.pi * Double(i) / 8))
-    player.opponentField[y - dj][i] = SHIP
-    ShowField(player, fire: 9)
-    usleep(800000)
+    player.opponentField[y - dj][i] = .SHIP
+    ui.ShowField(player, fire: 9)
+    //usleep(200000)
 }
-//let line = "BLANCHE:   I don't want realism. I want magic!"
-//print(line.split(separator: " "))
+
+var buff=[[Character]]()
+
+for _ in 0...9 {
+    var tmp=[Character]()
+    for _ in 0...9 {
+       tmp.append(".")
+       tmp.append(" ")
+    }
+    buff.append(tmp)
+}
+
+for k in 0...9 {
+    buff[k][4] = "8"
+    for j in 0...9 {
+        print(String(buff[j]))
+    }
+    print()
+    usleep(200000)
+}
