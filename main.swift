@@ -123,7 +123,7 @@ final class UI {
         }
     }
 
-    func DrawFire(pos:Position, _ cur:Current) {
+    func DrawFire(pos:Position, cur:Current) {
         if cur == .player {
             DrawFireTo(pos:pos, sym:"O")
         } else {
@@ -131,7 +131,7 @@ final class UI {
         }
     }
 
-    func DrawWave(pos:Position, sym:Character, _ cur:Current){
+    func DrawWave(pos:Position, cur:Current){
         for r in 0..<16 {
             ResetBuff(player:player)
             for j in (pos.y - r)...(pos.y + r) {
@@ -143,7 +143,7 @@ final class UI {
                             let dist = Int(Float(dx * dx + dy * dy).squareRoot())
                             let deltaX = cur == .player ? 39 : 3
                             if dist == r {
-                                buff[j + 2][i * 2 + deltaX] = sym
+                                buff[j + 2][i * 2 + deltaX] = "&"
                             }
                         }
                     }
@@ -153,6 +153,18 @@ final class UI {
             usleep(100000)
         }
     }    
+
+    func DrawInfo(x:Int, y:Int, info:String) {
+        let syms = Array(info)
+        if (0..<4).contains(y) {
+            let j = 12 + y
+            for i in 0..<syms.count {
+                if (0..<60).contains(i + x) {
+                    buff[j][i + x] = syms[i]
+                }
+            }
+        }
+    }
 }
 
 extension UI: NSCopying {
@@ -179,11 +191,20 @@ class Participan {
     
     static let SIZE_RANGE = 1...4
     
-    enum Direction: CaseIterable {
+    enum Direction {
         case LEFT
         case RIGHT
         case UP
         case DOWN
+        
+        var NEXT:Direction {
+            switch self {
+                case .LEFT: return .RIGHT
+                case .RIGHT: return .UP
+                case .UP: return .DOWN
+                case .DOWN: return .LEFT
+            }
+        }
     }
     
     enum Orient: CaseIterable {
@@ -196,12 +217,13 @@ class Participan {
     private var shipsCount = Participan.SHIPS_COUNT
     private var lastMove:Position? = nil
     private var goodLastMove:Position? = nil
-    private var curDirection = Direction.allCases.randomElement()!
+    private var curDirection = Direction.LEFT
     private var destroyShips = 0
     
     init() {
         clean()
         randomSetShips()
+        cleanStop()
     }
     
     private func checkStartPosition(_ x:Int, _ y:Int, _ size:Int, _ orient:Participan.Orient)-> Bool {
@@ -229,76 +251,14 @@ class Participan {
         }
     }
     
-    func addShip(_ x:Int, _ y:Int, _ size:Int, _ orient:Orient = .HORIZONTAL)-> Bool {
-        if !Participan.SIZE_RANGE.contains(size) ||
-            !TABLE_RANGE.contains(x) ||
-            !TABLE_RANGE.contains(y) ||
-            shipsCount[size] == 0 ||
-            selfField[y][x] != .NONE ||
-            (!checkStartPosition(x, y, size, orient)) {
-                return false
-        }
-        switch (orient) { 
-            case .HORIZONTAL:
-                for j in (y - 1)...(y + 1) {
-                    if !TABLE_RANGE.contains(j) { continue }
-                    for i in (x - 1)...(x + size) {
-                        if !TABLE_RANGE.contains(i) { continue }
-                        if j == y && i >= x && i < x + size {
-                            selfField[j][i] = Cell.SHIP
-                        } else {
-                            selfField[j][i] = Cell.STOP
-                        }
-                    }
-                }
-                shipsCount[size] -= 1
-                return true
-            case .VERTICAL:
-                for i in (x - 1)...(x + 1) {
-                    if !TABLE_RANGE.contains(i) { continue }
-                    for j in (y - 1)...(y + size) {
-                        if !TABLE_RANGE.contains(j) { continue }
-                        if i == x && j >= y && j < y + size {
-                            selfField[j][i] = Cell.SHIP
-                        } else {
-                            selfField[j][i] = Cell.STOP
-                        }
-                    }
-                }
-                shipsCount[size] -= 1
-                return true
-        }
-    }
-    
     private func clean() {
         opponentField = Participan.CLEAN_FIELD
         shipsCount = Participan.SHIPS_COUNT
         selfField = Participan.CLEAN_FIELD
         lastMove = nil
         goodLastMove = nil
-        curDirection = Direction.allCases.randomElement()!
+        curDirection = Direction.LEFT
         destroyShips = 0
-    }
-    
-    func randomSetShips() {
-        while (true){
-            var index = 4
-            shipsCount = Participan.SHIPS_COUNT
-            selfField = Participan.CLEAN_FIELD
-            for _ in 0...1000 {
-                let x:Int = Int.random(in: TABLE_RANGE)
-                let y:Int = Int.random(in: TABLE_RANGE)
-                let size:Int = Int.random(in: Participan.SIZE_RANGE)
-                let orient = Orient.allCases.randomElement()!
-                let _ = addShip(x, y, size, orient)
-                if shipsCount[index] == 0 {
-                    index -= 1
-                }
-                if index == 0 {
-                    return
-                }
-            }
-        }
     }
     
     private func checkLeftShip(x:Int, y:Int)->Bool {
@@ -357,56 +317,7 @@ class Participan {
         return true
     }
     
-    func checkCell(pos:Position)->Bool {
-        if opponentField[pos.y][pos.x] == .NONE {
-            return true
-        }
-        return false
-    }
-    
-    func checkAttack(pos:Position)->Cell {
-        if selfField[pos.y][pos.x] == .SHIP {
-            selfField[pos.y][pos.x] = .FIRE
-            if checkShip(pos:pos) {
-                setStop(setField: &selfField, pos:pos)
-                return .STOP
-            } else {
-                return .FIRE
-            }
-        } else {
-            if selfField[pos.y][pos.x] == .NONE {
-                selfField[pos.y][pos.x] = .UPSS
-            } 
-            return .UPSS
-        }
-    }
-    
-    func autoMove()->Position? {
-        if lastMove == nil {
-            for _ in 0...1000 {
-                let x:Int = Int.random(in: TABLE_RANGE)
-                let y:Int = Int.random(in: TABLE_RANGE)
-                lastMove = Position(x:x, y:y)
-                if lastMove != nil {
-                    if opponentField[lastMove!.y][lastMove!.x] == .NONE {
-                        return lastMove
-                    }
-                }
-            }
-            return nil
-        }
-        switch curDirection {
-            case .LEFT:
-            if lastMove!.x > 1 && opponentField[lastMove!.y][lastMove!.x - 1] == .NONE {
-                lastMove!.x += 1
-                return lastMove
-            }
-            default: break
-        }
-        return lastMove
-    }
-
-    private func setStop(setField: inout [[Cell]], pos:Position) {
+    private func setStopAroundShips(setField: inout [[Cell]], pos:Position) {
         var sizeX = 0
         var sizeY = 0
         var posStart = Position(x:pos.x, y:pos.y)!
@@ -451,18 +362,200 @@ class Participan {
             } 
         }
     }
+    
+    private func getRandomLastMove()->Position? {
+        for _ in 0...1000 {
+            let x:Int = Int.random(in: TABLE_RANGE)
+            let y:Int = Int.random(in: TABLE_RANGE)
+            lastMove = Position(x:x, y:y)
+            if lastMove != nil {
+                if opponentField[lastMove!.y][lastMove!.x] == .NONE {
+                    return lastMove
+                }
+            }
+        }
+        return nil        
+    }
+    
+    func randomSetShips() {
+        while (true){
+            var index = 4
+            shipsCount = Participan.SHIPS_COUNT
+            selfField = Participan.CLEAN_FIELD
+            for _ in 0...1000 {
+                let x:Int = Int.random(in: TABLE_RANGE)
+                let y:Int = Int.random(in: TABLE_RANGE)
+                let size:Int = Int.random(in: Participan.SIZE_RANGE)
+                let orient = Orient.allCases.randomElement()!
+                let _ = addShip(x, y, size, orient)
+                if shipsCount[index] == 0 {
+                    index -= 1
+                }
+                if index == 0 {
+                    return
+                }
+            }
+        }
+    }
+    
+    func addShip(_ x:Int, _ y:Int, _ size:Int, _ orient:Orient = .HORIZONTAL)-> Bool {
+        if !Participan.SIZE_RANGE.contains(size) ||
+            !TABLE_RANGE.contains(x) ||
+            !TABLE_RANGE.contains(y) ||
+            shipsCount[size] == 0 ||
+            selfField[y][x] != .NONE ||
+            (!checkStartPosition(x, y, size, orient)) {
+                return false
+        }
+        switch (orient) { 
+            case .HORIZONTAL:
+                for j in (y - 1)...(y + 1) {
+                    if !TABLE_RANGE.contains(j) { continue }
+                    for i in (x - 1)...(x + size) {
+                        if !TABLE_RANGE.contains(i) { continue }
+                        if j == y && i >= x && i < x + size {
+                            selfField[j][i] = Cell.SHIP
+                        } else {
+                            selfField[j][i] = Cell.STOP
+                        }
+                    }
+                }
+                shipsCount[size] -= 1
+                return true
+            case .VERTICAL:
+                for i in (x - 1)...(x + 1) {
+                    if !TABLE_RANGE.contains(i) { continue }
+                    for j in (y - 1)...(y + size) {
+                        if !TABLE_RANGE.contains(j) { continue }
+                        if i == x && j >= y && j < y + size {
+                            selfField[j][i] = Cell.SHIP
+                        } else {
+                            selfField[j][i] = Cell.STOP
+                        }
+                    }
+                }
+                shipsCount[size] -= 1
+                return true
+        }
+    }
+
+    func checkCell(pos:Position)->Bool {
+        if opponentField[pos.y][pos.x] == .NONE {
+            return true
+        }
+        return false
+    }
+    
+    func checkAttack(pos:Position)->Cell {
+        if selfField[pos.y][pos.x] == .SHIP {
+            selfField[pos.y][pos.x] = .FIRE
+            if checkShip(pos:pos) {
+                setStopAroundShips(setField: &selfField, pos:pos)
+                return .STOP
+            } else {
+                return .FIRE
+            }
+        } else {
+            if selfField[pos.y][pos.x] == .NONE {
+                selfField[pos.y][pos.x] = .UPSS
+            } 
+            return .UPSS
+        }
+    }
+    
+    func getGoodLastMove()->String {
+        var last:String = ""
+        if lastMove == nil {
+            last = "LAST=NIL"
+        } else {
+            last = "LAST x=\(lastMove!.x) y=\(lastMove!.y)"
+        }
+        if goodLastMove == nil {
+            return "\(last) GOOD=NIL dir=\(curDirection)"
+        } else {
+            return "\(last) GOOD x=\(goodLastMove!.x) y=\(goodLastMove!.y) dir=\(curDirection)"
+        }
+    }
+    
+    func autoMove()->Position? {
+        if goodLastMove == nil {
+            return getRandomLastMove()
+        } else {
+        let good = goodLastMove!
+        lastMove = good
+        switch curDirection {
+            case .LEFT:
+            if good.x > 1 && opponentField[good.y][good.x - 1] == .NONE {
+                lastMove!.x -= 1
+                return lastMove
+            } else {
+                curDirection = .RIGHT
+                for x in good.x...good.x + 3 {
+                    if opponentField[good.y][x] == .NONE {
+                        lastMove!.x = x
+                        return lastMove
+                    }
+                }
+                break
+            }
+            case .RIGHT:
+            if good.x < 8 && opponentField[good.y][good.x + 1] == .NONE {
+                lastMove!.x += 1// good.x + 1
+            } else {
+                curDirection = .LEFT
+                for x in stride(from:good.x, to:good.x - 4, by: -1) {
+                    if opponentField[good.y][x] == .NONE {
+                        lastMove!.x = x
+                        return lastMove
+                    }
+                }
+                break
+            }
+            case .UP:
+            if goodLastMove!.y > 1 && opponentField[goodLastMove!.y - 1][goodLastMove!.x] == .NONE {
+                lastMove!.y = goodLastMove!.y - 1
+            } else {
+                curDirection = .DOWN
+                for y in goodLastMove!.y...goodLastMove!.y + 3 {
+                    if opponentField[y][goodLastMove!.x] == .NONE {
+                        lastMove!.y = y
+                        return lastMove
+                    }
+                }
+                break
+            }
+            case .DOWN:
+            if goodLastMove!.y < 8 && opponentField[goodLastMove!.y + 1][goodLastMove!.x] == .NONE {
+                lastMove!.y = goodLastMove!.y + 1
+            } else {
+                curDirection = .UP
+                for y in stride(from:goodLastMove!.y, to: goodLastMove!.y - 4, by: -1) {
+                    if opponentField[y][goodLastMove!.x] == .NONE {
+                        lastMove!.y = y
+                        return lastMove
+                    }
+                }
+                break
+            }
+        }
+        }
+        return getRandomLastMove()
+    }
 
     func setResultAttack(pos:Position, res:Cell)->Bool {
         if res == .FIRE {
             opponentField[pos.y][pos.x] = .FIRE
+            goodLastMove = pos
             return true
         } else if res == .STOP {
             opponentField[pos.y][pos.x] = .FIRE
             destroyShips += 1
-            setStop(setField: &opponentField, pos:pos)
+            setStopAroundShips(setField: &opponentField, pos:pos)
+            goodLastMove = nil
             return true
         } else if opponentField[pos.y][pos.x] == .NONE {
             opponentField[pos.y][pos.x] = .UPSS
+            curDirection = curDirection.NEXT
             return false
         }
         return false
@@ -474,6 +567,10 @@ class Participan {
     
     func getOpponentCell(pos:Position)->Cell {
         return opponentField[pos.y][pos.x]
+    }
+    
+    func getDestroyShips()->Int {
+        return destroyShips
     }
     
     func Test_setOpponentField(pos:Position, cell:Cell, cur:Current) {
@@ -500,6 +597,7 @@ class Game {
     let opponent: Participan
     let ui: UI
     var current:Current
+    var win:Current?
     
     init(player:Participan, opponent:Participan) {
         self.player = player
@@ -509,8 +607,51 @@ class Game {
     }
     
     func update() {
-        
-        var pos = Position(x:2, y:4)!
+        while true {
+            if player.getDestroyShips() == 10 {
+                win = .player
+                break
+            }
+            
+            if opponent.getDestroyShips() == 10 {
+                win = .opponent
+                break
+            }
+            
+            ui.DrawInfo(x:0, y:0, info:"ИГРОК   :" + player.getGoodLastMove() + "     ")
+            ui.DrawInfo(x:0, y:2, info:"ОППОНЕНТ:" + opponent.getGoodLastMove() + "     ")
+            if current == .player {
+                if let pos = player.autoMove() {
+                    ui.DrawInfo(x:0, y:1, info:"Попытка x=\(pos.x) y=\(pos.y)")
+                    if opponent.checkCell(pos:pos) {
+                        ui.DrawFire(pos:pos, cur:.player)
+                        if player.setResultAttack(pos:pos, res:opponent.checkAttack(pos:pos)) {
+                            ui.DrawWave(pos:pos, cur:.player)
+                        } else {
+                            current = .opponent
+                        }
+                    }
+                }
+            } else {
+                if let pos = opponent.autoMove() {
+                    if player.checkCell(pos:pos) {
+                        ui.DrawFire(pos:pos, cur:.opponent)
+                            if opponent.setResultAttack(pos:pos, res:player.checkAttack(pos:pos)) {
+                                ui.DrawWave(pos:pos, cur:.opponent)
+                            } else {
+                                current = .player
+                            }
+                        }
+                    }
+                }
+            }
+         
+        if win == .player {
+            print ("ИГРОК ПОБЕДИЛ")
+        } else {
+            print("ИГРОК ПРОИГРАЛ")
+        }
+        /*var pos = Position(x:2, y:4)!
         for i in 0..<10 {
         for j in 0..<10 {
 
@@ -525,18 +666,13 @@ class Game {
                 let _ = opponent.setResultAttack(pos:pos, res:player.checkAttack(pos:pos))
             }
         }
-        }
+        } */
     }
 }
 
 let player = Participan()
-player.randomSetShips()
-player.cleanStop()
 
 let opponent = Participan()
-opponent.randomSetShips()
-opponent.cleanStop()
-
 
 let game = Game(player:player, opponent:opponent)
 
