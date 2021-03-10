@@ -11,8 +11,8 @@ enum Cell {
 }
 
 enum Current:CaseIterable {
-    case player
-    case opponent
+    case PLAYER
+    case OPPONENT
 }
 
 struct Position {
@@ -124,7 +124,7 @@ final class UI {
     }
 
     func DrawFire(pos:Position, cur:Current) {
-        if cur == .player {
+        if cur == .PLAYER {
             DrawFireTo(pos:pos, sym:"O")
         } else {
             DrawFireFrom(pos:pos, sym:"O")
@@ -141,7 +141,7 @@ final class UI {
                             let dx = pos.x - i
                             let dy = pos.y - j
                             let dist = Int(Float(dx * dx + dy * dy).squareRoot())
-                            let deltaX = cur == .player ? 39 : 3
+                            let deltaX = cur == .PLAYER ? 39 : 3
                             if dist == r {
                                 buff[j + 2][i * 2 + deltaX] = "&"
                             }
@@ -261,59 +261,59 @@ class Participan {
         destroyShips = 0
     }
     
-    private func checkLeftShip(x:Int, y:Int)->Bool {
+    private func findToLeft(setField:inout[[Cell]], _ x:Int, _ y:Int, find:Cell, ignore:Cell = .FIRE)->Bool {
         if x >= 0 {
-            if selfField[y][x] == .SHIP {return false}
-            if selfField[y][x] == .FIRE {
+            if setField[y][x] == find {return true}
+            if setField[y][x] == ignore {
                 if x > 0 {
-                    return checkLeftShip(x:x - 1, y:y)
+                    return findToLeft(setField:&setField, x - 1, y, find:find, ignore:ignore)
                 }
             }
         }
-        return true
+        return false
     }
     
-    private func checkRightShip(x:Int, y:Int)->Bool {
+    private func findToRight(setField:inout[[Cell]], _ x:Int, _ y:Int, find:Cell, ignore:Cell = .FIRE)->Bool {
         if x <= 9 {
-            if selfField[y][x] == .SHIP {return false}
-            if selfField[y][x] == .FIRE {
+            if setField[y][x] == find {return true}
+            if setField[y][x] == ignore {
                 if x < 9 {
-                    return checkRightShip(x:x + 1, y:y)
+                    return findToRight(setField:&setField, x + 1, y, find:find, ignore:ignore)
                 }
             }
         }
-        return true
+        return false
     }
     
-    private func checkUpShip(x:Int, y:Int)->Bool {
+    private func findToUp(setField:inout[[Cell]], _ x:Int, _ y:Int, find:Cell, ignore:Cell = .FIRE)->Bool {
         if y >= 0 {
-            if selfField[y][x] == .SHIP {return false}
-            if selfField[y][x] == .FIRE {
+            if setField[y][x] == find {return true}
+            if setField[y][x] == ignore {
                 if y > 0 {
-                    return checkUpShip(x:x, y:y - 1)
+                    return findToUp(setField:&setField, x, y - 1, find:find, ignore:ignore)
                 }
             }
         }
-        return true
+        return false
     }
     
-    private func checkDownShip(x:Int, y:Int)->Bool {
+    private func findToDown(setField:inout[[Cell]], _ x:Int, _ y:Int, find:Cell, ignore:Cell = .FIRE)->Bool {
         if y <= 9 {
-            if selfField[y][x] == .SHIP {return false}
-            if selfField[y][x] == .FIRE {
+            if setField[y][x] == find {return true}
+            if setField[y][x] == ignore {
                 if y < 9 {
-                    return checkDownShip(x:x, y:y + 1)
+                    return findToDown(setField:&setField, x, y + 1, find:find, ignore:ignore)
                 }
             }
         }
-        return true
+        return false
     }
     
     private func checkShip(pos:Position)->Bool {
-        if checkLeftShip(x:pos.x, y:pos.y) == false {return false}
-        if checkRightShip(x:pos.x, y:pos.y) == false {return false}
-        if checkUpShip(x:pos.x, y:pos.y) == false {return false}
-        if checkDownShip(x:pos.x, y:pos.y) == false {return false}
+        if findToLeft(setField:&selfField, pos.x, pos.y, find:.SHIP) ||
+            findToRight(setField:&selfField, pos.x, pos.y, find:.SHIP) ||
+            findToUp(setField:&selfField, pos.x, pos.y, find:.SHIP) ||
+            findToDown(setField:&selfField, pos.x, pos.y, find:.SHIP) {return false}
         return true
     }
     
@@ -363,7 +363,7 @@ class Participan {
         }
     }
     
-    private func getRandomLastMove()->Position? {
+    private func randomMove()->Position? {
         for _ in 0...1000 {
             let x:Int = Int.random(in: TABLE_RANGE)
             let y:Int = Int.random(in: TABLE_RANGE)
@@ -462,84 +462,56 @@ class Participan {
             return .UPSS
         }
     }
-    
-    func getGoodLastMove()->String {
-        var last:String = ""
-        if lastMove == nil {
-            last = "LAST=NIL"
-        } else {
-            last = "LAST x=\(lastMove!.x) y=\(lastMove!.y)"
-        }
-        if goodLastMove == nil {
-            return "\(last) GOOD=NIL dir=\(curDirection)"
-        } else {
-            return "\(last) GOOD x=\(goodLastMove!.x) y=\(goodLastMove!.y) dir=\(curDirection)"
-        }
-    }
-    
+
     func autoMove()->Position? {
         if goodLastMove == nil {
-            return getRandomLastMove()
+            return randomMove()
         } else {
         let good = goodLastMove!
         lastMove = good
-        switch curDirection {
-            case .LEFT:
-            if good.x > 1 && opponentField[good.y][good.x - 1] == .NONE {
-                lastMove!.x -= 1
-                return lastMove
-            } else {
-                curDirection = .RIGHT
-                for x in good.x...good.x + 3 {
-                    if opponentField[good.y][x] == .NONE {
-                        lastMove!.x = x
-                        return lastMove
+        for _ in 0..<4 {
+            switch curDirection {
+                case .LEFT:
+                if findToLeft(setField:&opponentField, good.x, good.y, find:.NONE) {
+                    for x in stride(from:good.x - 1, to:good.x - 4, by:-1) {
+                        if opponentField[good.y][x] == .NONE {
+                            lastMove!.x = x
+                            return lastMove
+                        }
                     }
                 }
-                break
-            }
-            case .RIGHT:
-            if good.x < 8 && opponentField[good.y][good.x + 1] == .NONE {
-                lastMove!.x += 1// good.x + 1
-            } else {
-                curDirection = .LEFT
-                for x in stride(from:good.x, to:good.x - 4, by: -1) {
-                    if opponentField[good.y][x] == .NONE {
-                        lastMove!.x = x
-                        return lastMove
+                case .RIGHT:
+                if findToRight(setField:&opponentField, good.x, good.y, find:.NONE) {
+                    for x in good.x + 1...good.x + 3 {
+                        if opponentField[good.y][x] == .NONE {
+                            lastMove!.x = x
+                            return lastMove
+                        }
                     }
                 }
-                break
-            }
-            case .UP:
-            if goodLastMove!.y > 1 && opponentField[goodLastMove!.y - 1][goodLastMove!.x] == .NONE {
-                lastMove!.y = goodLastMove!.y - 1
-            } else {
-                curDirection = .DOWN
-                for y in goodLastMove!.y...goodLastMove!.y + 3 {
-                    if opponentField[y][goodLastMove!.x] == .NONE {
-                        lastMove!.y = y
-                        return lastMove
+                case .UP:
+                if findToUp(setField:&opponentField, good.x, good.y, find:.NONE) {
+                    for y in stride(from:good.y - 1, to:good.y - 4, by:-1) {
+                        if opponentField[y][good.x] == .NONE {
+                            lastMove!.y = y
+                            return lastMove
+                        } 
                     }
                 }
-                break
-            }
-            case .DOWN:
-            if goodLastMove!.y < 8 && opponentField[goodLastMove!.y + 1][goodLastMove!.x] == .NONE {
-                lastMove!.y = goodLastMove!.y + 1
-            } else {
-                curDirection = .UP
-                for y in stride(from:goodLastMove!.y, to: goodLastMove!.y - 4, by: -1) {
-                    if opponentField[y][goodLastMove!.x] == .NONE {
-                        lastMove!.y = y
-                        return lastMove
+                case .DOWN:
+                if findToDown(setField:&opponentField, good.x, good.y, find:.NONE) {
+                    for y in good.y + 1...good.y + 3 {
+                        if opponentField[y][good.x] == .NONE {
+                            lastMove!.y = y
+                            return lastMove
+                        } 
                     }
                 }
-                break
             }
+            curDirection = curDirection.NEXT
         }
         }
-        return getRandomLastMove()
+        return randomMove()
     }
 
     func setResultAttack(pos:Position, res:Cell)->Bool {
@@ -574,10 +546,24 @@ class Participan {
     }
     
     func Test_setOpponentField(pos:Position, cell:Cell, cur:Current) {
-        if cur == .player {
+        if cur == .PLAYER {
             opponentField[pos.y][pos.x] = cell
         } else {
             selfField[pos.y][pos.x] = cell
+        }
+    }
+    
+    func Test_getGoodLastMove()->String {
+        var last:String = ""
+        if lastMove == nil {
+            last = "LAST=NIL"
+        } else {
+            last = "LAST x=\(lastMove!.x) y=\(lastMove!.y)"
+        }
+        if goodLastMove == nil {
+            return "\(last) GOOD=NIL dir=\(curDirection)"
+        } else {
+            return "\(last) GOOD x=\(goodLastMove!.x) y=\(goodLastMove!.y) dir=\(curDirection)"
         }
     }
     
@@ -609,64 +595,45 @@ class Game {
     func update() {
         while true {
             if player.getDestroyShips() == 10 {
-                win = .player
+                win = .PLAYER
                 break
             }
             
             if opponent.getDestroyShips() == 10 {
-                win = .opponent
+                win = .OPPONENT
                 break
             }
             
-            ui.DrawInfo(x:0, y:0, info:"ИГРОК   :" + player.getGoodLastMove() + "     ")
-            ui.DrawInfo(x:0, y:2, info:"ОППОНЕНТ:" + opponent.getGoodLastMove() + "     ")
-            if current == .player {
+            if current == .PLAYER {
                 if let pos = player.autoMove() {
-                    ui.DrawInfo(x:0, y:1, info:"Попытка x=\(pos.x) y=\(pos.y)")
                     if opponent.checkCell(pos:pos) {
-                        ui.DrawFire(pos:pos, cur:.player)
+                        ui.DrawFire(pos:pos, cur:current)
                         if player.setResultAttack(pos:pos, res:opponent.checkAttack(pos:pos)) {
-                            ui.DrawWave(pos:pos, cur:.player)
+                            ui.DrawWave(pos:pos, cur:current)
                         } else {
-                            current = .opponent
+                            current = .OPPONENT
                         }
                     }
                 }
             } else {
                 if let pos = opponent.autoMove() {
                     if player.checkCell(pos:pos) {
-                        ui.DrawFire(pos:pos, cur:.opponent)
+                        ui.DrawFire(pos:pos, cur:current)
                             if opponent.setResultAttack(pos:pos, res:player.checkAttack(pos:pos)) {
-                                ui.DrawWave(pos:pos, cur:.opponent)
+                                ui.DrawWave(pos:pos, cur:current)
                             } else {
-                                current = .player
+                                current = .PLAYER
                             }
                         }
                     }
                 }
             }
          
-        if win == .player {
+        if win == .PLAYER {
             print ("ИГРОК ПОБЕДИЛ")
         } else {
             print("ИГРОК ПРОИГРАЛ")
         }
-        /*var pos = Position(x:2, y:4)!
-        for i in 0..<10 {
-        for j in 0..<10 {
-
-            pos.x = i
-            pos.y = j
-            if player.checkCell(pos:pos) {
-                ui.DrawFire(pos:pos, .player)
-                let _ = player.setResultAttack(pos:pos, res:opponent.checkAttack(pos:pos))
-            }
-            if opponent.checkCell(pos:pos) {
-                ui.DrawFire(pos:pos, .opponent)
-                let _ = opponent.setResultAttack(pos:pos, res:player.checkAttack(pos:pos))
-            }
-        }
-        } */
     }
 }
 
