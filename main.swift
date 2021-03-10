@@ -29,22 +29,18 @@ struct Position {
 final class UI {
     static var inst:UI? = nil
     
-    static func instance(player:Participan)->UI {
+    static func instance()->UI {
         if inst == nil {
-            inst = UI(player:player)
+            inst = UI()
         }
         return inst!
     }
     
-    private let player:Participan
-    
-    private init(player:Participan) {
-        self.player = player
-    }
+    private init() {}
 
     private var buff:[[Character]] = Array(repeating: Array(repeating: ".", count: 60), count: 15)
 
-    func ResetBuff(player:Participan) {
+    func ResetBuff(playerField:[[Cell]], opponentField:[[Cell]]) {
         let FIGURE: [Cell: Character] = [
             .NONE: ".",
             .SHIP: "#",
@@ -58,9 +54,9 @@ final class UI {
                 if j < 12 {
                     switch(i) {
                     case 2...22 where i % 2 == 1:
-                        buff[j][i] = FIGURE[player.getSelfCell(pos:Position(x:(i - 2) / 2, y:j - 2)!)] ?? "?"
+                        buff[j][i] = FIGURE[playerField[j - 2][(i - 2) / 2]] ?? "?"
                     case 38...58 where i % 2 == 1:
-                        buff[j][i] = FIGURE[player.getOpponentCell(pos:Position(x:(i - 38) / 2, y:j - 2)!)] ?? "?"
+                        buff[j][i] = FIGURE[opponentField[j - 2][(i - 38) / 2]] ?? "?"
                     case 23, 34:
                         buff[j][i] = "|"
                     default:
@@ -89,7 +85,7 @@ final class UI {
         }
     }
     
-    private func DrawFireFrom(pos:Position, sym:Character) {
+    private func DrawFireFrom(pos:Position, sym:Character, playerField:[[Cell]], opponentField:[[Cell]]) {
         let deltaX = pos.x * 2 + 1
         let xDist = 46 - deltaX
         var half = xDist / 2
@@ -97,7 +93,7 @@ final class UI {
         half += deltaX
         //let i = deltaX
         for i in stride(from:45, through:deltaX, by: -1) {
-            ResetBuff(player:player)
+            ResetBuff(playerField:playerField, opponentField:opponentField)
             let h = i < half ? pos.y + 2 : 6
             let j = (i - half) * (i - half) * h / qHalf
             buff[j][i + 2] = sym
@@ -106,7 +102,7 @@ final class UI {
         }
     }
 
-    private func DrawFireTo(pos:Position, sym:Character) {
+    private func DrawFireTo(pos:Position, sym:Character, playerField:[[Cell]], opponentField:[[Cell]]) {
         let deltaX = (pos.x + 1) * 2
         let xDist = 27 + deltaX
         var half = xDist / 2
@@ -114,7 +110,7 @@ final class UI {
         half += 11
         //let i = xDist + 10
         for i in stride(from:11, to:(xDist + 11), by: 1) {
-            ResetBuff(player:player)
+            ResetBuff(playerField:playerField, opponentField:opponentField)
             let h = i < half ? 6 : pos.y + 2
             let j = (i - half) * (i - half) * h / qHalf
             buff[j][i] = sym
@@ -123,17 +119,17 @@ final class UI {
         }
     }
 
-    func DrawFire(pos:Position, cur:Current) {
+    func DrawFire(pos:Position, cur:Current, playerField:[[Cell]], opponentField:[[Cell]]) {
         if cur == .PLAYER {
-            DrawFireTo(pos:pos, sym:"O")
+            DrawFireTo(pos:pos, sym:"O", playerField:playerField, opponentField:opponentField)
         } else {
-            DrawFireFrom(pos:pos, sym:"O")
+            DrawFireFrom(pos:pos, sym:"O", playerField:playerField, opponentField:opponentField)
         }
     }
 
-    func DrawWave(pos:Position, cur:Current){
+    func DrawWave(pos:Position, cur:Current, playerField:[[Cell]], opponentField:[[Cell]]){
         for r in 0..<16 {
-            ResetBuff(player:player)
+            ResetBuff(playerField:playerField, opponentField:opponentField)
             for j in (pos.y - r)...(pos.y + r) {
                 if TABLE_RANGE.contains(j) {
                     for i in (pos.x - r)...(pos.x + r) {
@@ -261,48 +257,48 @@ class Participan {
         destroyShips = 0
     }
     
-    private func findToLeft(setField:inout[[Cell]], _ x:Int, _ y:Int, find:Cell, ignore:Cell = .FIRE)->Bool {
+    private func findToLeft(field:[[Cell]], _ x:Int, _ y:Int, find:Cell, ignore:Cell = .FIRE)->Bool {
         if x >= 0 {
-            if setField[y][x] == find {return true}
-            if setField[y][x] == ignore {
+            if field[y][x] == find {return true}
+            if field[y][x] == ignore {
                 if x > 0 {
-                    return findToLeft(setField:&setField, x - 1, y, find:find, ignore:ignore)
+                    return findToLeft(field:field, x - 1, y, find:find, ignore:ignore)
                 }
             }
         }
         return false
     }
     
-    private func findToRight(setField:inout[[Cell]], _ x:Int, _ y:Int, find:Cell, ignore:Cell = .FIRE)->Bool {
+    private func findToRight(field:[[Cell]], _ x:Int, _ y:Int, find:Cell, ignore:Cell = .FIRE)->Bool {
         if x <= 9 {
-            if setField[y][x] == find {return true}
-            if setField[y][x] == ignore {
+            if field[y][x] == find {return true}
+            if field[y][x] == ignore {
                 if x < 9 {
-                    return findToRight(setField:&setField, x + 1, y, find:find, ignore:ignore)
+                    return findToRight(field:field, x + 1, y, find:find, ignore:ignore)
                 }
             }
         }
         return false
     }
     
-    private func findToUp(setField:inout[[Cell]], _ x:Int, _ y:Int, find:Cell, ignore:Cell = .FIRE)->Bool {
+    private func findToUp(field:[[Cell]], _ x:Int, _ y:Int, find:Cell, ignore:Cell = .FIRE)->Bool {
         if y >= 0 {
-            if setField[y][x] == find {return true}
-            if setField[y][x] == ignore {
+            if field[y][x] == find {return true}
+            if field[y][x] == ignore {
                 if y > 0 {
-                    return findToUp(setField:&setField, x, y - 1, find:find, ignore:ignore)
+                    return findToUp(field:field, x, y - 1, find:find, ignore:ignore)
                 }
             }
         }
         return false
     }
     
-    private func findToDown(setField:inout[[Cell]], _ x:Int, _ y:Int, find:Cell, ignore:Cell = .FIRE)->Bool {
+    private func findToDown(field:[[Cell]], _ x:Int, _ y:Int, find:Cell, ignore:Cell = .FIRE)->Bool {
         if y <= 9 {
-            if setField[y][x] == find {return true}
-            if setField[y][x] == ignore {
+            if field[y][x] == find {return true}
+            if field[y][x] == ignore {
                 if y < 9 {
-                    return findToDown(setField:&setField, x, y + 1, find:find, ignore:ignore)
+                    return findToDown(field:field, x, y + 1, find:find, ignore:ignore)
                 }
             }
         }
@@ -310,10 +306,10 @@ class Participan {
     }
     
     private func checkShip(pos:Position)->Bool {
-        if findToLeft(setField:&selfField, pos.x, pos.y, find:.SHIP) ||
-            findToRight(setField:&selfField, pos.x, pos.y, find:.SHIP) ||
-            findToUp(setField:&selfField, pos.x, pos.y, find:.SHIP) ||
-            findToDown(setField:&selfField, pos.x, pos.y, find:.SHIP) {return false}
+        if findToLeft(field:selfField, pos.x, pos.y, find:.SHIP) ||
+            findToRight(field:selfField, pos.x, pos.y, find:.SHIP) ||
+            findToUp(field:selfField, pos.x, pos.y, find:.SHIP) ||
+            findToDown(field:selfField, pos.x, pos.y, find:.SHIP) {return false}
         return true
     }
     
@@ -363,18 +359,38 @@ class Participan {
         }
     }
     
-    private func randomMove()->Position? {
-        for _ in 0...1000 {
-            let x:Int = Int.random(in: TABLE_RANGE)
-            let y:Int = Int.random(in: TABLE_RANGE)
-            lastMove = Position(x:x, y:y)
-            if lastMove != nil {
-                if opponentField[lastMove!.y][lastMove!.x] == .NONE {
-                    return lastMove
+    func randomMove()->Position?{
+        var list:[(Int, Int)] = []
+        for j in TABLE_RANGE {
+            for i in TABLE_RANGE {
+                if opponentField[j][i] == .NONE {
+                    list.append((i,j))
                 }
             }
         }
-        return nil        
+        if list.isEmpty {
+            print("Random=NIL")
+            return nil
+        }
+        let index = Int.random(in: (0..<list.count))
+        let pos = Position(x:list[index].0, y:list[index].1)!
+        print("Random=\(pos)")
+        return pos
+    }
+    
+    func resetGoodMove(){
+        goodLastMove = nil
+    }
+    
+    func checkEmptySelfField()->Bool{
+        for j in TABLE_RANGE {
+            for i in TABLE_RANGE {
+                if selfField[j][i] == .NONE {
+                    return false
+                }
+            }
+        }
+        return true
     }
     
     func randomSetShips() {
@@ -442,12 +458,15 @@ class Participan {
     func checkCell(pos:Position)->Bool {
         if opponentField[pos.y][pos.x] == .NONE {
             return true
+        } else {
+            print("Check cell \(pos) = \(opponentField[pos.y][pos.x])")
+            return false
         }
-        return false
     }
     
     func checkAttack(pos:Position)->Cell {
-        if selfField[pos.y][pos.x] == .SHIP {
+        switch (selfField[pos.y][pos.x]) {
+        case .SHIP:
             selfField[pos.y][pos.x] = .FIRE
             if checkShip(pos:pos) {
                 setStopAroundShips(setField: &selfField, pos:pos)
@@ -455,7 +474,9 @@ class Participan {
             } else {
                 return .FIRE
             }
-        } else {
+        case .FIRE:
+            return .FIRE
+        case .STOP, .NONE, .UPSS:
             if selfField[pos.y][pos.x] == .NONE {
                 selfField[pos.y][pos.x] = .UPSS
             } 
@@ -472,7 +493,7 @@ class Participan {
         for _ in 0..<4 {
             switch curDirection {
                 case .LEFT:
-                if findToLeft(setField:&opponentField, good.x, good.y, find:.NONE) {
+                if findToLeft(field:opponentField, good.x, good.y, find:.NONE) {
                     for x in stride(from:good.x - 1, to:good.x - 4, by:-1) {
                         if opponentField[good.y][x] == .NONE {
                             lastMove!.x = x
@@ -481,7 +502,7 @@ class Participan {
                     }
                 }
                 case .RIGHT:
-                if findToRight(setField:&opponentField, good.x, good.y, find:.NONE) {
+                if findToRight(field:opponentField, good.x, good.y, find:.NONE) {
                     for x in good.x + 1...good.x + 3 {
                         if opponentField[good.y][x] == .NONE {
                             lastMove!.x = x
@@ -490,7 +511,7 @@ class Participan {
                     }
                 }
                 case .UP:
-                if findToUp(setField:&opponentField, good.x, good.y, find:.NONE) {
+                if findToUp(field:opponentField, good.x, good.y, find:.NONE) {
                     for y in stride(from:good.y - 1, to:good.y - 4, by:-1) {
                         if opponentField[y][good.x] == .NONE {
                             lastMove!.y = y
@@ -499,7 +520,7 @@ class Participan {
                     }
                 }
                 case .DOWN:
-                if findToDown(setField:&opponentField, good.x, good.y, find:.NONE) {
+                if findToDown(field:opponentField, good.x, good.y, find:.NONE) {
                     for y in good.y + 1...good.y + 3 {
                         if opponentField[y][good.x] == .NONE {
                             lastMove!.y = y
@@ -511,6 +532,7 @@ class Participan {
             curDirection = curDirection.NEXT
         }
         }
+        resetGoodMove()
         return randomMove()
     }
 
@@ -525,8 +547,10 @@ class Participan {
             setStopAroundShips(setField: &opponentField, pos:pos)
             goodLastMove = nil
             return true
-        } else if opponentField[pos.y][pos.x] == .NONE {
-            opponentField[pos.y][pos.x] = .UPSS
+        } else {
+            if opponentField[pos.y][pos.x] == .NONE {
+                opponentField[pos.y][pos.x] = .UPSS
+            }
             curDirection = curDirection.NEXT
             return false
         }
@@ -535,6 +559,14 @@ class Participan {
     
     func getSelfCell(pos:Position)->Cell {
         return selfField[pos.y][pos.x]
+    }
+    
+    func getSelfField()->[[Cell]] {
+        return selfField
+    }
+    
+    func getOpponentField()->[[Cell]] {
+        return opponentField
     }
     
     func getOpponentCell(pos:Position)->Cell {
@@ -588,47 +620,68 @@ class Game {
     init(player:Participan, opponent:Participan) {
         self.player = player
         self.opponent = opponent
-        ui = UI.instance(player:player)
+        ui = UI.instance()
         current = Current.allCases.randomElement()!
     }
     
     func update() {
-        while true {
+        var n = 0
+        var flag = true
+        while (flag) {
+            n += 1
             if player.getDestroyShips() == 10 {
                 win = .PLAYER
+                flag = false
                 break
             }
             
             if opponent.getDestroyShips() == 10 {
                 win = .OPPONENT
+                flag = false
                 break
             }
             
-            if current == .PLAYER {
+            switch current {
+                case .PLAYER:
                 if let pos = player.autoMove() {
-                    if opponent.checkCell(pos:pos) {
-                        ui.DrawFire(pos:pos, cur:current)
+                    if opponent.checkCell(pos:pos) == true {
+                        ui.DrawFire(pos:pos, cur:current, playerField:opponent.getSelfField(), opponentField:player.getOpponentField())
                         if player.setResultAttack(pos:pos, res:opponent.checkAttack(pos:pos)) {
-                            ui.DrawWave(pos:pos, cur:current)
+                            //ui.DrawWave(pos:pos, cur:current, playerField:player.getSelfField(), opponentField:opponent.getSelfField())
                         } else {
                             current = .OPPONENT
                         }
+                    } else {
+                        if opponent.checkEmptySelfField() {
+                            win = .PLAYER
+                            flag = false
+                            break
+                        }
+                        player.resetGoodMove()
+                        let _ = player.randomMove()
                     }
                 }
-            } else {
+                case .OPPONENT:
                 if let pos = opponent.autoMove() {
-                    if player.checkCell(pos:pos) {
-                        ui.DrawFire(pos:pos, cur:current)
-                            if opponent.setResultAttack(pos:pos, res:player.checkAttack(pos:pos)) {
-                                ui.DrawWave(pos:pos, cur:current)
-                            } else {
-                                current = .PLAYER
-                            }
+                    if player.checkCell(pos:pos) == true {
+                        ui.DrawFire(pos:pos, cur:current, playerField:opponent.getOpponentField(), opponentField:player.getSelfField())
+                        if opponent.setResultAttack(pos:pos, res:player.checkAttack(pos:pos)) {
+                            //ui.DrawWave(pos:pos, cur:current, playerField:player.getSelfField(), opponentField:opponent.getSelfField())
+                        } else {
+                               current = .PLAYER
                         }
+                    } else {
+                        if player.checkEmptySelfField() {
+                            win = .OPPONENT
+                            flag = false
+                            break
+                        }
+                        opponent.resetGoodMove()
+                        let _ = opponent.randomMove()
                     }
                 }
             }
-         
+        } 
         if win == .PLAYER {
             print ("ИГРОК ПОБЕДИЛ")
         } else {
