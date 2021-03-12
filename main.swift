@@ -6,13 +6,9 @@ enum Cell {
     case NONE
     case SHIP
     case FIRE
+    case DEAD
     case UPSS
     case STOP
-}
-
-enum Current:CaseIterable {
-    case PLAYER
-    case OPPONENT
 }
 
 struct Position {
@@ -27,6 +23,11 @@ struct Position {
 }
 
 final class UI {
+    enum CurrentField {
+        case LEFT
+        case RIGHT
+    }
+
     static var inst:UI? = nil
     
     static func instance()->UI {
@@ -38,13 +39,14 @@ final class UI {
     
     private init() {}
 
-    private var buff:[[Character]] = Array(repeating: Array(repeating: ".", count: 60), count: 15)
+    private var buff:[[Character]] = Array(repeating: Array(repeating: ".", count: 60), count: 16)
 
-    func ResetBuff(leftField:[[Cell]], rightField:[[Cell]]) {
+    private func ResetBuff(leftField:[[Cell]], rightField:[[Cell]]) {
         let FIGURE: [Cell: Character] = [
             .NONE: " ",
             .SHIP: "#",
             .FIRE: "@",
+            .DEAD: ".",
             .UPSS: "*",
             .STOP: "X"]
         buff[0] = Array("       ПОЛЕ ИГРОКА     |          |      ПОЛЕ ПРОТИВНИКА   |")
@@ -75,60 +77,71 @@ final class UI {
                 buff[j][1] = "0"
                 buff[j][36] = "1"
                 buff[j][37] = "0"
+            } else if j == 12 {
+                for i in 0..<buff[j].count{
+                    buff[j][i] = "-"
+                }
             }
         }
     }
     
-    func PrintBuff() {
+    private func PrintBuff() {
         for j in 0..<buff.count {
             print(String(buff[j]))
         }
     }
     
-    private func DrawFireFrom(pos:Position, sym:Character, leftField:[[Cell]], rightField:[[Cell]]) {
+    private func DrawTargetPoint(_ i:Int, _ j:Int){
+        buff[j - 1][i + 0] = "|"
+        buff[j + 0][i - 1] = "-"
+        buff[j + 0][i + 1] = "-"
+        buff[j + 1][i + 0] = "|"
+    }
+    
+    private func DrawBalisticAttackToLeft(pos:Position, sym:Character, leftField:[[Cell]], rightField:[[Cell]]) {
         let deltaX = pos.x * 2 + 1
         let xDist = 46 - deltaX
         var half = xDist / 2
         let qHalf = half * half
         half += deltaX
-        //let i = deltaX
         for i in stride(from:45, through:deltaX, by: -1) {
             ResetBuff(leftField:leftField, rightField:rightField)
             let h = i < half ? pos.y + 2 : 6
             let j = (i - half) * (i - half) * h / qHalf
             buff[j][i + 2] = sym
+            DrawTargetPoint(pos.x * 2 + 3, pos.y + 2)
             PrintBuff()
-            usleep(100000)
+            usleep(50000)
         }
     }
 
-    private func DrawFireTo(pos:Position, sym:Character, leftField:[[Cell]], rightField:[[Cell]]) {
+    private func DrawBalisticAttackToRight(pos:Position, sym:Character, leftField:[[Cell]], rightField:[[Cell]]) {
         let deltaX = (pos.x + 1) * 2
         let xDist = 27 + deltaX
         var half = xDist / 2
         let qHalf = half * half
         half += 11
-        //let i = xDist + 10
         for i in stride(from:11, to:(xDist + 11), by: 1) {
             ResetBuff(leftField:leftField, rightField:rightField)
             let h = i < half ? 6 : pos.y + 2
             let j = (i - half) * (i - half) * h / qHalf
             buff[j][i] = sym
+            DrawTargetPoint(pos.x * 2 + 39, pos.y + 2)
             PrintBuff()
-            usleep(100000)
+            usleep(50000)
         }
     }
 
-    func DrawFire(pos:Position, cur:Current, leftField:[[Cell]], rightField:[[Cell]]) {
-        if cur == .PLAYER {
-            DrawFireTo(pos:pos, sym:"O", leftField:leftField, rightField:rightField)
+    func DrawBalisticAttack(pos:Position, to:CurrentField, leftField:[[Cell]], rightField:[[Cell]]) {
+        if to == .RIGHT {
+            DrawBalisticAttackToRight(pos:pos, sym:"O", leftField:leftField, rightField:rightField)
         } else {
-            DrawFireFrom(pos:pos, sym:"O", leftField:leftField, rightField:rightField)
+            DrawBalisticAttackToLeft(pos:pos, sym:"O", leftField:leftField, rightField:rightField)
         }
     }
 
-    func DrawWave(pos:Position, cur:Current, leftField:[[Cell]], rightField:[[Cell]]){
-        let deltaX = cur == .PLAYER ? 39 : 3
+    func DrawWave(pos:Position, to:CurrentField, leftField:[[Cell]], rightField:[[Cell]]){
+        let deltaX = to == .RIGHT ? 39 : 3
         for r in 0..<16 {
             ResetBuff(leftField:leftField, rightField:rightField)
             for j in (pos.y - r)...(pos.y + r) {
@@ -152,9 +165,9 @@ final class UI {
         }
     }    
 
-    func DrawUPSS(pos:Position, cur:Current, leftField:[[Cell]], rightField:[[Cell]]){
-        let deltaX = cur == .PLAYER ? 39 : 3
-        for i in 0..<5 {
+    func DrawUPSS(pos:Position, to:CurrentField, leftField:[[Cell]], rightField:[[Cell]]){
+        let deltaX = to == .RIGHT ? 39 : 3
+        for i in 0..<2 {
             ResetBuff(leftField:leftField, rightField:rightField)
             let sym:Character = i % 2 == 0 ? "*" : "X"
             buff[pos.y + 2][pos.x * 2 + deltaX] = sym
@@ -163,16 +176,164 @@ final class UI {
         }
     }
 
-    func DrawInfo(x:Int, y:Int, info:String) {
+    func DrawFields(leftField:[[Cell]], rightField:[[Cell]]) {
+        ResetBuff(leftField:leftField, rightField:rightField)
+        PrintBuff()
+    }
+
+    func SetInfo(col:Int, line:Int, info:String) {
         let syms = Array(info)
-        if (0..<4).contains(y) {
-            let j = 12 + y
-            for i in 0..<syms.count {
-                if (0..<60).contains(i + x) {
-                    buff[j][i + x] = syms[i]
+        if (0..<4).contains(line) {
+            let j = 13 + line
+            for i in col..<60 {
+                if (0..<60).contains(i) {
+                    if (i - col) < syms.count {
+                        buff[j][i] = syms[i - col]
+                    } else {
+                        buff[j][i] = " "
+                    }
                 }
             }
         }
+    }
+
+    func DrawWin(leftField:[[Cell]], rightField:[[Cell]]) {
+        var s:[String] = []
+        s.append("╔═══════════════════════════════════════╗")
+        s.append("║  ╔╦╗╦ ╦ ╔╗ ╦ ╦╦ ╔╗╦═╗╦═╗╔═╗ ╔╗ ┬ ┬ ┬  ║")
+        s.append("║   ║ ╠╗║ ╠╩╗╠╗║║╔╝║║  ╠═╝╠═╣╔╝║ │ │ │  ║")
+        s.append("║   ╩ ╚╝╩ ╚═╝╚╝╩╚╝ ╩╩  ╩  ╩ ╩╝ ╩ o o o  ║")
+        s.append("║   ╔═╗╔═╗╔═╗ ╔╗ ╦═╗╔═╗╔╗  ╔╗╔═╗╦╔═╗    ║")
+        s.append("║   ║ ║║ ║ ═║ ║║ ╠═╝╠═╣╠╩╗╔╝║╚╦╣╠╣ ║    ║")
+        s.append("║   ╩ ╩╚═╝╚═╝╔╩╩╗╩  ╩ ╩╚═╝╝ ╩═╝╩╩╚═╝    ║")
+        s.append("╚═══════════════════════════════════════╝")
+        ResetBuff(leftField:leftField, rightField:rightField)
+        var j = 3
+        for n in s {
+            var i = 10
+            for l in n {
+                buff[j][i] = l
+                i += 1
+            }
+            j += 1
+        }
+        PrintBuff()
+    }
+    
+    func DrawStart(leftField:[[Cell]], rightField:[[Cell]]) {
+        var s:[String] = []
+        s.append("╔═══════════════════════════════════════╗")
+        s.append("║  *** )─┼)***  ...o  ..      (┼─(      ║")
+        s.append("║   ** )─┼)*** ..    .  .  (┼─(┼─(┼─(   ║")
+        s.append("║╒══╕**)─┼) * .     .    . (┼─(┼─(┼ ╒══╕║")
+        s.append("║└─┐╘╦╬╦╦╬╦╦╬╦─>── o   ──<─╦╬╦╦╬╦╦╬╦╛┌─┘║")
+        s.append("║ ╭╯~ ~~ ~~ ~~/ ~~ v ~ ~~ \\~~ ~~ ~ ~~╰╮ ║")
+        s.append("║-  ╔╦╗╔═╗╦═╗╔═╗╦╔═╔═╗╦║╔╗ ╦═╗╔═╗╦║╔╗  -║")
+        s.append("║-- ║║║║ ║╠═╝║  ╠╩╗║ ║║╔╝║ ╠═╗║ ║║╔╝║ --║")
+        s.append("║-  ╩ ╩╚═╝╩  ╚═╝╩ ╩╩═╝╚╝ ╩ ╩═╝╩═╝╚╝ ╩  -║")
+        s.append("╚═══════════════════════════════════════╝")
+        ResetBuff(leftField:leftField, rightField:rightField)
+        var j = 2
+        for n in s {
+            var i = 10
+            for l in n {
+                buff[j][i] = l
+                i += 1
+            }
+            j += 1
+        }
+        SetInfo(col:0, line:0, info:"")
+        SetInfo(col:0, line:1, info:"")
+        SetInfo(col:0, line:2, info:"Нажмите ENTER для продолжения...")
+        PrintBuff()
+    }
+    
+    func DrawLost(leftField:[[Cell]], rightField:[[Cell]]) {
+        var s:[String] = []
+        s.append("╔═════════════════════════════════════════╗")
+        s.append("║  ╔╦╗╦ ╦ ╔═╗╦═╗╔═╗╦ ╔╗╦═╗╦═╗╔═╗ ╔╗ ┬ ┬ ┬ ║")
+        s.append("║   ║ ╠╗║ ║ ║╠═╝║ ║║╔╝║║  ╠═╝╠═╣╔╝║ │ │ │ ║")
+        s.append("║   ╩ ╚╝╩ ╩ ╩╩  ╚═╝╚╝ ╩╩  ╩  ╩ ╩╝ ╩ o o o ║")
+        s.append("║ ╔╦╗╦ ╦╔═╗ ╔═╗╦ ╦╔═╗╦ ╦╦   ═╗╦╔═╔═╗ ╔╗╦  ║")
+        s.append("║ ║║║╠═╣║╣  ║ ║╚═╣║╣ ╠═╣╠═╗ ╔╩╬╩╗╠═╣╔╝║╠═╗║")
+        s.append("║ ╩ ╩╩ ╩╚═╝ ╚═╝  ╩╚═╝╩ ╩╩═╝ ╩ ╩ ╩╩ ╩╝ ╩╩═╝║")
+        s.append("╚═════════════════════════════════════════╝")
+        ResetBuff(leftField:leftField, rightField:rightField)
+        var j = 3
+        for n in s {
+            var i = 10
+            for l in n {
+                buff[j][i] = l
+                i += 1
+            }
+            j += 1
+        }
+        PrintBuff()
+    }
+
+    func GetCell(leftField:[[Cell]], rightField:[[Cell]])->Position {
+        let Map:[Character:Int] = ["a":0, "b":1, "c":2, "d":3, "e":4, "f":5, "g":6, "h":7, "i":8, "j":9]
+        var x:Int = -1
+        var y:Int = -1
+        var ySet:Bool = false
+        var xSet:Bool = false
+        while true {
+            SetInfo(col:0, line:2, info:"Впишите клетку для атаки?")
+            DrawFields(leftField:leftField, rightField:rightField)
+            let k = readLine()!.lowercased()
+            print("len=\(k.count)")
+            if (2...4).contains(k.count) {
+                x = -1; y = -1
+                xSet = false; ySet = false
+                let l = Array(k)
+                for i in 0..<l.count {
+                    if ("a"..."j").contains(l[i]) {
+                        if xSet == false {
+                            x = Map[l[i]]!
+                            xSet = true
+                        } else {
+                            xSet = false
+                            break
+                        }
+                    } else if ("1"..."9").contains(l[i]) {
+                        if ySet == false {
+                            y = Int(String(l[i]))! - 1
+                            ySet = true
+                        } else {
+                            ySet = false
+                            break
+                        }
+                    } else if l[i] == "0" {
+                        if i > 0 && l[i - 1] == "1" {
+                            y = 9
+                        } else {
+                            ySet = false
+                            break
+                        }
+                    } else if l[i] == " " {
+                        if i > 0 && l[i - 1] == " " {
+                            xSet = false
+                            break
+                        }
+                    } else {
+                        xSet = false
+                        break
+                    }
+                }
+                if (xSet == true) && (ySet == true) {
+                    break
+                }
+            }
+            SetInfo(col:0, line:1, info:"Вы ошиблись! Внимательнее!")
+            DrawFields(leftField:leftField, rightField:rightField)
+            if k == "exit" {
+                x = 0
+                y = 0
+                break
+            }
+        }
+        let pos = Position(x:x, y:y)!
+        return pos
     }
 }
 
@@ -335,7 +496,7 @@ class Participan {
         return true
     }
     
-    private func setStopAroundShips(setField: inout [[Cell]], pos:Position) {
+    private func setDeadShip(setField: inout [[Cell]], pos:Position) {
         var sizeX = 0
         var sizeY = 0
         var posStart = Position(x:pos.x, y:pos.y)!
@@ -374,6 +535,8 @@ class Participan {
                     if TABLE_RANGE.contains(x) {
                         if x < posStart.x || x > posStart.x + sizeX || y < posStart.y || y > posStart.y + sizeY {
                             setField[y][x] = .STOP
+                        } else {
+                            setField[y][x] = .DEAD
                         }
                     }
                 }
@@ -490,8 +653,8 @@ class Participan {
         case .SHIP:
             selfField[pos.y][pos.x] = .FIRE
             if checkShip(pos:pos) {
-                setStopAroundShips(setField: &selfField, pos:pos)
-                return .STOP
+                setDeadShip(setField: &selfField, pos:pos)
+                return .DEAD
             } else {
                 return .FIRE
             }
@@ -568,10 +731,10 @@ class Participan {
             opponentField[pos.y][pos.x] = .FIRE
             goodLastMove = pos
             return true
-        case .STOP:
+        case .DEAD:
             opponentField[pos.y][pos.x] = .FIRE
             destroyShips += 1
-            setStopAroundShips(setField: &opponentField, pos:pos)
+            setDeadShip(setField: &opponentField, pos:pos)
             goodLastMove = nil
             return true
         default:
@@ -596,80 +759,122 @@ class Participan {
 }
 
 class Game {
+    enum GameStatus {
+        case START
+        case GAME
+        case FINISH
+        case EXIT
+    }
+    
+    enum Current:CaseIterable {
+        case PLAYER
+        case OPPONENT
+    }
+    
     let player: Participan
     let opponent: Participan
     let ui: UI
     var current:Current
     var win:Current?
+    var status = GameStatus.START
     
     init(player:Participan, opponent:Participan) {
         self.player = player
         self.opponent = opponent
         ui = UI.instance()
         current = Current.allCases.randomElement()!
+        status = GameStatus.START
     }
     
-    func update() {
-        var n = 0
-        var flag = true
-        for _ in 0...200 {
-            n += 1
+    private func start() {
+        let lField = player.getOpponentField()
+        let rField = opponent.getOpponentField()
+        let _ = ui.DrawLost(leftField:lField, rightField:rField)
+        status = .EXIT
+    }
+    
+    private func game() {
+        for n in 0...200 {
+            print("ход \(n)")
+            let lField = player.getSelfField()
+            let rField = player.getOpponentField()
+            
             if player.getDestroyShips() == 10 {
                 win = .PLAYER
-                break
+                status = .FINISH
+                return
             }
             
             if opponent.getDestroyShips() == 10 {
                 win = .OPPONENT
-                break
+                status = .FINISH
+                return
             }
             
             switch current {
             case .PLAYER:
-                if let pos = player.autoMove() {
+                let pos = ui.GetCell(leftField:lField, rightField:rField)
                     if player.checkCell(pos:pos) == true {
-                        ui.DrawFire(pos:pos, cur:current, leftField:opponent.getOpponentField(), rightField:player.getOpponentField())
+                        ui.DrawBalisticAttack(pos:pos, to:.RIGHT, leftField:lField, rightField:rField)
                         if player.setResultAttack(pos:pos, res:opponent.checkAttack(pos:pos)) {
-                            ui.DrawWave(pos:pos, cur:current, leftField:opponent.getOpponentField(), rightField:player.getOpponentField())
+                            ui.DrawWave(pos:pos, to:.RIGHT, leftField:lField, rightField:rField)
                         } else {
-                            ui.DrawUPSS(pos:pos, cur:current, leftField:opponent.getOpponentField(), rightField:player.getOpponentField())
+                            ui.DrawUPSS(pos:pos, to:.RIGHT, leftField:lField, rightField:rField)
                             current = .OPPONENT
                         }
                     } else {
                         if opponent.checkEmptySelfField() {
                             win = .PLAYER
-                            flag = false
-                            break
+                            status = .FINISH
+                            return
                         }
                         let _ = player.randomMove()
                     }
-                }
             case .OPPONENT:
                 if let pos = opponent.autoMove() {
                     if opponent.checkCell(pos:pos) == true {
-                        ui.DrawFire(pos:pos, cur:current, leftField:opponent.getOpponentField(), rightField:player.getOpponentField())
+                        ui.DrawBalisticAttack(pos:pos, to:.LEFT, leftField:lField, rightField:rField)
                         if opponent.setResultAttack(pos:pos, res:player.checkAttack(pos:pos)) {
-                            ui.DrawWave(pos:pos, cur:current, leftField:opponent.getOpponentField(), rightField:player.getOpponentField())
+                            ui.DrawWave(pos:pos, to:.LEFT, leftField:lField, rightField:rField)
                         } else {
-                            ui.DrawUPSS(pos:pos, cur:current, leftField:opponent.getOpponentField(), rightField:player.getOpponentField())
+                            ui.DrawUPSS(pos:pos, to:.LEFT, leftField:lField, rightField:rField)
                             current = .PLAYER
                         }
                     } else {
                         if player.checkEmptySelfField() {
                             win = .OPPONENT
-                            flag = false
-                            break
+                            status = .FINISH
+                            return
                         }
                         let _ = opponent.randomMove()
                     }
                 }
             }
-            if !flag {break}
-        } 
-        if win == .PLAYER {
-            print ("ИГРОК ПОБЕДИЛ")
+        }
+        status = .FINISH
+    }
+    
+    private func finish() {
+        let lField = player.getSelfField()
+        let rField = opponent.getSelfField()
+        if win == nil {
+            print("НЕВЕРОЯТНО, НО НИЧЬЯ ???!!!")
+        } else if win == .PLAYER {
+            ui.DrawWin(leftField:lField, rightField:rField)
         } else {
-            print("ИГРОК ПРОИГРАЛ")
+            ui.DrawLost(leftField:lField, rightField:rField)
+        }
+        status = .EXIT
+    }
+    
+    func update() {
+        while true {
+            switch status {
+            case .START: start()
+            case .GAME: game()
+            case .FINISH: finish()
+            case .EXIT: return
+            }
         }
     }
 }
