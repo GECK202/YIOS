@@ -27,7 +27,14 @@ final class UI {
         case LEFT
         case RIGHT
     }
-
+    
+    enum Banner {
+        case WIN
+        case LOST
+        case START
+        case MENU
+    }
+    
     static var inst:UI? = nil
     
     static func instance()->UI {
@@ -49,8 +56,8 @@ final class UI {
             .DEAD: ".",
             .UPSS: "*",
             .STOP: "X"]
-        buff[0] = Array("       ПОЛЕ ИГРОКА     |          |      ПОЛЕ ПРОТИВНИКА   |")
-        buff[1] = Array("   a b c d e f g h i j |          |    a b c d e f g h i j |")
+        buff[0] = Array("       ПОЛЕ ИГРОКА     │          │      ПОЛЕ ПРОТИВНИКА   │")
+        buff[1] = Array("   a b c d e f g h i j │          │    a b c d e f g h i j │")
         for j in 2..<buff.count {
             for i in 0..<buff[j].count{
                 if j < 12 {
@@ -60,7 +67,7 @@ final class UI {
                     case 38...58 where i % 2 == 1:
                         buff[j][i] = FIGURE[rightField[j - 2][(i - 38) / 2]] ?? "?"
                     case 23, 34, 59:
-                        buff[j][i] = "|"
+                        buff[j][i] = "│"
                     default:
                         buff[j][i] = " "
                     }
@@ -79,7 +86,14 @@ final class UI {
                 buff[j][37] = "0"
             } else if j == 12 {
                 for i in 0..<buff[j].count{
-                    buff[j][i] = "-"
+                    switch(i) {
+                    case 23, 34:
+                        buff[j][i] = "┴"
+                    case 59:
+                        buff[j][i] = "┘"
+                    default:
+                        buff[j][i] = "─"
+                    }
                 }
             }
         }
@@ -92,10 +106,10 @@ final class UI {
     }
     
     private func DrawTargetPoint(_ i:Int, _ j:Int){
-        buff[j - 1][i + 0] = "|"
-        buff[j + 0][i - 1] = "-"
-        buff[j + 0][i + 1] = "-"
-        buff[j + 1][i + 0] = "|"
+        buff[j - 1][i + 0] = "│"
+        buff[j + 0][i - 1] = "─"
+        buff[j + 0][i + 1] = "─"
+        buff[j + 1][i + 0] = "│"
     }
     
     private func DrawBalisticAttackToLeft(pos:Position, sym:Character, leftField:[[Cell]], rightField:[[Cell]]) {
@@ -163,7 +177,7 @@ final class UI {
             PrintBuff()
             usleep(100000)
         }
-    }    
+    }
 
     func DrawUPSS(pos:Position, to:CurrentField, leftField:[[Cell]], rightField:[[Cell]]){
         let deltaX = to == .RIGHT ? 39 : 3
@@ -196,42 +210,49 @@ final class UI {
             }
         }
     }
-
-    func DrawWin(leftField:[[Cell]], rightField:[[Cell]]) {
-        var s:[String] = []
-        s.append("╔═══════════════════════════════════════╗")
-        s.append("║  ╔╦╗╦ ╦ ╔╗ ╦ ╦╦ ╔╗╦═╗╦═╗╔═╗ ╔╗ ┬ ┬ ┬  ║")
-        s.append("║   ║ ╠╗║ ╠╩╗╠╗║║╔╝║║  ╠═╝╠═╣╔╝║ │ │ │  ║")
-        s.append("║   ╩ ╚╝╩ ╚═╝╚╝╩╚╝ ╩╩  ╩  ╩ ╩╝ ╩ o o o  ║")
-        s.append("║   ╔═╗╔═╗╔═╗ ╔╗ ╦═╗╔═╗╔╗  ╔╗╔═╗╦╔═╗    ║")
-        s.append("║   ║ ║║ ║ ═║ ║║ ╠═╝╠═╣╠╩╗╔╝║╚╦╣╠╣ ║    ║")
-        s.append("║   ╩ ╩╚═╝╚═╝╔╩╩╗╩  ╩ ╩╚═╝╝ ╩═╝╩╩╚═╝    ║")
-        s.append("╚═══════════════════════════════════════╝")
-        ResetBuff(leftField:leftField, rightField:rightField)
-        var j = 3
-        for n in s {
-            var i = 10
-            for l in n {
-                buff[j][i] = l
-                i += 1
-            }
-            j += 1
-        }
-        PrintBuff()
+    
+    func DrawMenu(){
+        
     }
     
-    func DrawStart(leftField:[[Cell]], rightField:[[Cell]]) {
+    func DrawBanner(leftField:[[Cell]], rightField:[[Cell]], banner:Banner) {
         var s:[String] = []
-        s.append("╔═══════════════════════════════════════╗")
-        s.append("║  *** )─┼)***  ...o  ..      (┼─(      ║")
-        s.append("║   ** )─┼)*** ..    .  .  (┼─(┼─(┼─(   ║")
-        s.append("║╒══╕**)─┼) * .     .    . (┼─(┼─(┼ ╒══╕║")
-        s.append("║└─┐╘╦╬╦╦╬╦╦╬╦─>── o   ──<─╦╬╦╦╬╦╦╬╦╛┌─┘║")
-        s.append("║ ╭╯~ ~~ ~~ ~~/ ~~ v ~ ~~ \\~~ ~~ ~ ~~╰╮ ║")
-        s.append("║-  ╔╦╗╔═╗╦═╗╔═╗╦╔═╔═╗╦║╔╗ ╦═╗╔═╗╦║╔╗  -║")
-        s.append("║-- ║║║║ ║╠═╝║  ╠╩╗║ ║║╔╝║ ╠═╗║ ║║╔╝║ --║")
-        s.append("║-  ╩ ╩╚═╝╩  ╚═╝╩ ╩╩═╝╚╝ ╩ ╩═╝╩═╝╚╝ ╩  -║")
-        s.append("╚═══════════════════════════════════════╝")
+        s.append("╔═════════════════════════════════════════╗")
+        switch banner {
+        case .START:
+            s.append("║  *** )─┼)***  ...o   . .      (┼─(      ║")
+            s.append("║   ** )─┼)*** ..     .   .  (┼─(┼─(┼─(   ║")
+            s.append("║╒══╕**)─┼) * .      .     . (┼─(┼─(┼ ╒══╕║")
+            s.append("║└─┐╘╦╬╦╦╬╦╦╬╦─>──  o    ──<─╦╬╦╦╬╦╦╬╦╛┌─┘║")
+            s.append("║ ╭╯~ ~~ ~~ ~~/ ~~ ~v ~~ ~~ \\~~ ~~ ~ ~~╰╮ ║")
+            s.append("║-   ╔╦╗╔═╗╦═╗╔═╗╦╔═╔═╗╦║╔╗ ╦═╗╔═╗╦║╔╗   -║")
+            s.append("║--  ║║║║ ║╠═╝║  ╠╩╗║ ║║╔╝║ ╠═╗║ ║║╔╝║  --║")
+            s.append("║-   ╩ ╩╚═╝╩  ╚═╝╩ ╩╩═╝╚╝ ╩ ╩═╝╩═╝╚╝ ╩   -║")
+            
+        case .WIN:
+            s.append("║   ╔╦╗╦ ╦ ╔╗ ╦ ╦╦ ╔╗╦═╗╦═╗╔═╗ ╔╗ ┬ ┬ ┬   ║")
+            s.append("║    ║ ╠╗║ ╠╩╗╠╗║║╔╝║║  ╠═╝╠═╣╔╝║ │ │ │   ║")
+            s.append("║    ╩ ╚╝╩ ╚═╝╚╝╩╚╝ ╩╩  ╩  ╩ ╩╝ ╩ o o o   ║")
+            s.append("║    ╔═╗╔═╗╔═╗ ╔╗ ╦═╗╔═╗╔╗  ╔╗╔═╗╦╔═╗     ║")
+            s.append("║    ║ ║║ ║ ═║ ║║ ╠═╝╠═╣╠╩╗╔╝║╚╦╣╠╣ ║     ║")
+            s.append("║    ╩ ╩╚═╝╚═╝╔╩╩╗╩  ╩ ╩╚═╝╝ ╩═╝╩╩╚═╝     ║")
+        case .LOST:
+            s.append("║  ╔╦╗╦ ╦ ╔═╗╦═╗╔═╗╦ ╔╗╦═╗╦═╗╔═╗ ╔╗ ┬ ┬ ┬ ║")
+            s.append("║   ║ ╠╗║ ║ ║╠═╝║ ║║╔╝║║  ╠═╝╠═╣╔╝║ │ │ │ ║")
+            s.append("║   ╩ ╚╝╩ ╩ ╩╩  ╚═╝╚╝ ╩╩  ╩  ╩ ╩╝ ╩ o o o ║")
+            s.append("║ ╔╦╗╦ ╦╔═╗ ╔═╗╦ ╦╔═╗╦ ╦╦   ═╗╦╔═╔═╗ ╔╗╦  ║")
+            s.append("║ ║║║╠═╣║╣  ║ ║╚═╣║╣ ╠═╣╠═╗ ╔╩╬╩╗╠═╣╔╝║╠═╗║")
+            s.append("║ ╩ ╩╩ ╩╚═╝ ╚═╝  ╩╚═╝╩ ╩╩═╝ ╩ ╩ ╩╩ ╩╝ ╩╩═╝║")
+        case .MENU:
+            s.append("║               МЕНЮ ИГРЫ:                ║")
+            s.append("║                                         ║")
+            s.append("║   1 - НОВАЯ ИГРА                        ║")
+            s.append("║   2 - РАССТАВИТЬ КОРАБЛИ ВРУЧНУЮ        ║")
+            s.append("║   3 - ВЫХОД                             ║")
+            s.append("║                                         ║")
+        }
+        
+        s.append("╚═════════════════════════════════════════╝")
         ResetBuff(leftField:leftField, rightField:rightField)
         var j = 2
         for n in s {
@@ -247,29 +268,6 @@ final class UI {
         SetInfo(col:0, line:2, info:"Нажмите ENTER для продолжения...")
         PrintBuff()
         _ = readLine()!
-    }
-    
-    func DrawLost(leftField:[[Cell]], rightField:[[Cell]]) {
-        var s:[String] = []
-        s.append("╔═════════════════════════════════════════╗")
-        s.append("║  ╔╦╗╦ ╦ ╔═╗╦═╗╔═╗╦ ╔╗╦═╗╦═╗╔═╗ ╔╗ ┬ ┬ ┬ ║")
-        s.append("║   ║ ╠╗║ ║ ║╠═╝║ ║║╔╝║║  ╠═╝╠═╣╔╝║ │ │ │ ║")
-        s.append("║   ╩ ╚╝╩ ╩ ╩╩  ╚═╝╚╝ ╩╩  ╩  ╩ ╩╝ ╩ o o o ║")
-        s.append("║ ╔╦╗╦ ╦╔═╗ ╔═╗╦ ╦╔═╗╦ ╦╦   ═╗╦╔═╔═╗ ╔╗╦  ║")
-        s.append("║ ║║║╠═╣║╣  ║ ║╚═╣║╣ ╠═╣╠═╗ ╔╩╬╩╗╠═╣╔╝║╠═╗║")
-        s.append("║ ╩ ╩╩ ╩╚═╝ ╚═╝  ╩╚═╝╩ ╩╩═╝ ╩ ╩ ╩╩ ╩╝ ╩╩═╝║")
-        s.append("╚═════════════════════════════════════════╝")
-        ResetBuff(leftField:leftField, rightField:rightField)
-        var j = 3
-        for n in s {
-            var i = 10
-            for l in n {
-                buff[j][i] = l
-                i += 1
-            }
-            j += 1
-        }
-        PrintBuff()
     }
 
     func GetCell(leftField:[[Cell]], rightField:[[Cell]])->Position {
@@ -375,6 +373,24 @@ class Participan {
                 case .DOWN: return .LEFT
             }
         }
+        
+        var REVERSE:Direction {
+            switch self {
+                case .LEFT: return .RIGHT
+                case .RIGHT: return .LEFT
+                case .UP: return .DOWN
+                case .DOWN: return .UP
+            }
+        }
+        
+        var CROSS:Direction {
+            switch self {
+                case .LEFT: return .UP
+                case .RIGHT: return .DOWN
+                case .UP: return .RIGHT
+                case .DOWN: return .LEFT
+            }
+        }
     }
     
     enum Orient: CaseIterable {
@@ -387,6 +403,7 @@ class Participan {
     private var shipsCount = Participan.SHIPS_COUNT
     private var lastMove:Position? = nil
     private var goodLastMove:Position? = nil
+    private var oldGoodLastMove:Position? = nil
     private var curDirection = Direction.LEFT
     private var destroyShips = 0
     
@@ -397,7 +414,7 @@ class Participan {
     }
     
     private func checkStartPosition(_ x:Int, _ y:Int, _ size:Int, _ orient:Participan.Orient)-> Bool {
-        switch (orient) { 
+        switch (orient) {
         case .HORIZONTAL:
             if x + size > 10 {
                 return false
@@ -541,7 +558,7 @@ class Participan {
                         }
                     }
                 }
-            } 
+            }
         }
     }
     
@@ -609,7 +626,7 @@ class Participan {
             (!checkStartPosition(x, y, size, orient)) {
                 return false
         }
-        switch (orient) { 
+        switch (orient) {
         case .HORIZONTAL:
             for j in (y - 1)...(y + 1) {
                 if !TABLE_RANGE.contains(j) { continue }
@@ -720,7 +737,11 @@ class Participan {
                     }
                 }
             }
-            curDirection = curDirection.NEXT
+            if oldGoodLastMove == nil {
+                curDirection = curDirection.NEXT
+            } else {
+                curDirection = curDirection.REVERSE
+            }
         }
         }
         return randomMove()
@@ -730,13 +751,23 @@ class Participan {
         switch res {
         case.FIRE:
             opponentField[pos.y][pos.x] = .FIRE
+            if goodLastMove == nil {
+                oldGoodLastMove = nil
+            } else {
+                oldGoodLastMove = goodLastMove
+            }
             goodLastMove = pos
             return true
         case .DEAD:
             opponentField[pos.y][pos.x] = .FIRE
             destroyShips += 1
             setDeadShip(setField: &opponentField, pos:pos)
-            goodLastMove = nil
+            if goodLastMove == nil {
+                oldGoodLastMove = nil
+            } else {
+                oldGoodLastMove = goodLastMove
+            }
+            goodLastMove = pos
             return true
         default:
             if opponentField[pos.y][pos.x] == .NONE {
@@ -790,12 +821,12 @@ class Game {
     private func start() {
         let lField = player.getOpponentField()
         let rField = opponent.getOpponentField()
-        let _ = ui.DrawStart(leftField:lField, rightField:rField)
+        let _ = ui.DrawBanner(leftField:lField, rightField:rField, banner:.START)
+        let _ = ui.DrawBanner(leftField:lField, rightField:rField, banner:.MENU)
         status = .GAME
     }
     
     private func game() {
-        var n = 0
         for n in 0...200 {
             let lField = player.getSelfField()
             let rField = player.getOpponentField()
@@ -854,7 +885,6 @@ class Game {
                 }
             }
         }
-        print("Выход ходов=\(n)")
         status = .FINISH
     }
     
@@ -864,9 +894,9 @@ class Game {
         if win == nil {
             print("НЕВЕРОЯТНО, НО НИЧЬЯ ???!!!")
         } else if win == .PLAYER {
-            ui.DrawWin(leftField:lField, rightField:rField)
+            ui.DrawBanner(leftField:lField, rightField:rField, banner:.WIN)
         } else {
-            ui.DrawLost(leftField:lField, rightField:rField)
+            ui.DrawBanner(leftField:lField, rightField:rField, banner:.LOST)
         }
         status = .EXIT
     }
