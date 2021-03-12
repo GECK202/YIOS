@@ -246,6 +246,7 @@ final class UI {
         SetInfo(col:0, line:1, info:"")
         SetInfo(col:0, line:2, info:"Нажмите ENTER для продолжения...")
         PrintBuff()
+        _ = readLine()!
     }
     
     func DrawLost(leftField:[[Cell]], rightField:[[Cell]]) {
@@ -789,13 +790,13 @@ class Game {
     private func start() {
         let lField = player.getOpponentField()
         let rField = opponent.getOpponentField()
-        let _ = ui.DrawLost(leftField:lField, rightField:rField)
-        status = .EXIT
+        let _ = ui.DrawStart(leftField:lField, rightField:rField)
+        status = .GAME
     }
     
     private func game() {
+        var n = 0
         for n in 0...200 {
-            print("ход \(n)")
             let lField = player.getSelfField()
             let rField = player.getOpponentField()
             
@@ -826,6 +827,7 @@ class Game {
                         if opponent.checkEmptySelfField() {
                             win = .PLAYER
                             status = .FINISH
+                            print("Неожиданный выход 1 ходов=\(n)")
                             return
                         }
                         let _ = player.randomMove()
@@ -844,6 +846,7 @@ class Game {
                         if player.checkEmptySelfField() {
                             win = .OPPONENT
                             status = .FINISH
+                            print("Неожиданный выход 2 ходов=\(n)")
                             return
                         }
                         let _ = opponent.randomMove()
@@ -851,6 +854,7 @@ class Game {
                 }
             }
         }
+        print("Выход ходов=\(n)")
         status = .FINISH
     }
     
