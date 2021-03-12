@@ -33,6 +33,7 @@ final class UI {
         case LOST
         case START
         case MENU
+        case HELP
     }
     
     static var inst:UI? = nil
@@ -249,7 +250,16 @@ final class UI {
             s.append("║   1 - НОВАЯ ИГРА                        ║")
             s.append("║   2 - РАССТАВИТЬ КОРАБЛИ ВРУЧНУЮ        ║")
             s.append("║   3 - ВЫХОД                             ║")
-            s.append("║                                         ║")
+            s.append("║   4 - СПРАВКА                           ║")
+        case .HELP:
+            s.append("║               СПРАВКА:                  ║")
+            s.append("║   ЧТОБЫ СДЕЛАТЬ ХОД, НЕОБХОДИМО ВВЕСТИ  ║")
+            s.append("║   БУКВУ СТОЛБЦА И НОМЕР СТРОКИ В ЛЮБОМ  ║")
+            s.append("║   ПОРЯДКЕ И ЛЮБОМ РЕГИСТРЕ В АНГЛИЙСКОЙ ║")
+            s.append("║   РАСКЛАДКЕ И НАЖАТЬ ENTER.             ║")
+            s.append("║   БУКВА И ЧИСЛО МОГУТ БЫТЬ РАЗДЕЛЕНЫ    ║")
+            s.append("║   ОДНИМ ПРОБЕЛОМ. ЧИСЛО 10 НЕ ДОЛЖНО    ║")
+            s.append("║   БЫТЬ РАЗДЕЛЕНО.                       ║")
         }
         
         s.append("╚═════════════════════════════════════════╝")
@@ -823,6 +833,7 @@ class Game {
         let rField = opponent.getOpponentField()
         let _ = ui.DrawBanner(leftField:lField, rightField:rField, banner:.START)
         let _ = ui.DrawBanner(leftField:lField, rightField:rField, banner:.MENU)
+        let _ = ui.DrawBanner(leftField:lField, rightField:rField, banner:.HELP)
         status = .GAME
     }
     
