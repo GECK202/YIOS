@@ -216,7 +216,56 @@ final class UI {
         
     }
     
-    func DrawBanner(leftField:[[Cell]], rightField:[[Cell]], banner:Banner) {
+    func DrawBanner(leftField:[[Cell]], rightField:[[Cell]], line:Int, col:Int, banner:[String]) {
+        var max_val = 1
+        var lastLine = min(12 - line, banner.count)  
+        for i in 0..<lastLine {
+            print("len[\(i)]=\(banner[i].count)")
+            max_val = max(banner[i].count, max_val)
+        }
+        lastLine += line
+        max_val = min(max_val + col + 1, 59)
+        print("len max=\(max_val)")
+        ResetBuff(leftField:leftField, rightField:rightField)
+        buff[line][col] = "╔"
+        buff[line][max_val] = "╗"
+        buff[lastLine][col] = "╚"
+        buff[lastLine][max_val] = "╝"
+        for i in (col + 1)..<max_val {
+            buff[line][i] = "═"
+            buff[lastLine][i] = "═"
+        }
+        var j = line + 1
+        for n in banner {
+            buff[j][col] = "║"
+            buff[j][max_val] = "║"
+            var i = col + 1
+            for l in n {
+                if i < max_val {
+                    buff[j][i] = l
+                }
+                i += 1
+            }
+            if i < max_val - 1 {
+                for k in i..<max_val {
+                    buff[j][k] = " "
+                }
+            }
+            j += 1
+            if j >= lastLine {
+                break
+            }
+        }
+        
+        SetInfo(col:0, line:0, info:"")
+        SetInfo(col:0, line:1, info:"")
+        SetInfo(col:0, line:2, info:"PRESS ENTER ...")
+        PrintBuff()
+        _ = readLine()!
+    }
+
+/*    
+    func DrawBanner(leftField:[[Cell]], rightField:[[Cell]], banner:Banner, info:String) {
         var s:[String] = []
         s.append("╔═════════════════════════════════════════╗")
         switch banner {
@@ -275,22 +324,23 @@ final class UI {
         }
         SetInfo(col:0, line:0, info:"")
         SetInfo(col:0, line:1, info:"")
-        SetInfo(col:0, line:2, info:"Нажми ENTER для продолжения...")
+        SetInfo(col:0, line:2, info:info)
         PrintBuff()
         _ = readLine()!
     }
 
-    func GetCell(leftField:[[Cell]], rightField:[[Cell]])->Position? {
+*/
+
+    func GetCell(leftField:[[Cell]], rightField:[[Cell]], request:String, onError:String)->Position? {
         let Map:[Character:Int] = ["a":0, "b":1, "c":2, "d":3, "e":4, "f":5, "g":6, "h":7, "i":8, "j":9]
         var x:Int = -1
         var y:Int = -1
         var ySet:Bool = false
         var xSet:Bool = false
         while true {
-            SetInfo(col:0, line:2, info:"Укажи координаты?(или exit для выхода)")
+            SetInfo(col:0, line:2, info:request)
             DrawFields(leftField:leftField, rightField:rightField)
             let k = readLine()!.lowercased()
-            print("len=\(k.count)")
             if (2...4).contains(k.count) {
                 x = -1; y = -1
                 xSet = false; ySet = false
@@ -333,7 +383,7 @@ final class UI {
                     break
                 }
             }
-            SetInfo(col:0, line:1, info:"Вы ошиблись! Внимательнее!")
+            SetInfo(col:0, line:1, info:onError)
             DrawFields(leftField:leftField, rightField:rightField)
             if k == "exit" {
                 break
@@ -799,6 +849,46 @@ class Participan {
 }
 
 class Game {
+    let START_BANNER:[String] = [
+        "  *** )─┼)***  ...o   . .      (┼─(      ",
+        "   ** )─┼)*** ..     .   .  (┼─(┼─(┼─(   ",
+        "╒══╕**)─┼) * .      .     . (┼─(┼─(┼ ╒══╕",
+        "└─┐╘╦╬╦╦╬╦╦╬╦─>──  o    ──<─╦╬╦╦╬╦╦╬╦╛┌─┘",
+        " ╭╯~ ~~ ~~ ~~/ ~~ ~v ~~ ~~ \\~~ ~~ ~ ~~╰╮ ",
+        "-   ╔╦╗╔═╗╦═╗╔═╗╦╔═╔═╗╦║╔╗ ╦═╗╔═╗╦║╔╗   -",
+        "--  ║║║║ ║╠═╝║  ╠╩╗║ ║║╔╝║ ╠═╗║ ║║╔╝║  --",
+        "-   ╩ ╩╚═╝╩  ╚═╝╩ ╩╩═╝╚╝ ╩ ╩═╝╩═╝╚╝ ╩   -"]
+    let WIN_BANNER:[String] = [
+        "   ╔╦╗╦ ╦ ╔╗ ╦ ╦╦ ╔╗╦═╗╦═╗╔═╗ ╔╗ ┬ ┬ ┬   ",
+        "    ║ ╠╗║ ╠╩╗╠╗║║╔╝║║  ╠═╝╠═╣╔╝║ │ │ │   ",
+        "    ╩ ╚╝╩ ╚═╝╚╝╩╚╝ ╩╩  ╩  ╩ ╩╝ ╩ o o o   ",
+        "    ╔═╗╔═╗╔═╗ ╔╗ ╦═╗╔═╗╔╗  ╔╗╔═╗╦╔═╗     ",
+        "    ║ ║║ ║ ═║ ║║ ╠═╝╠═╣╠╩╗╔╝║╚╦╣╠╣ ║     ",
+        "    ╩ ╩╚═╝╚═╝╔╩╩╗╩  ╩ ╩╚═╝╝ ╩═╝╩╩╚═╝     "]
+    let LOST_BANNER:[String] = [
+        "  ╔╦╗╦ ╦ ╔═╗╦═╗╔═╗╦ ╔╗╦═╗╦═╗╔═╗ ╔╗ ┬ ┬ ┬ ",
+        "   ║ ╠╗║ ║ ║╠═╝║ ║║╔╝║║  ╠═╝╠═╣╔╝║ │ │ │ ",
+        "   ╩ ╚╝╩ ╩ ╩╩  ╚═╝╚╝ ╩╩  ╩  ╩ ╩╝ ╩ o o o ",
+        " ╔╦╗╦ ╦╔═╗ ╔═╗╦ ╦╔═╗╦ ╦╦   ═╗╦╔═╔═╗ ╔╗╦  ",
+        " ║║║╠═╣║╣  ║ ║╚═╣║╣ ╠═╣╠═╗ ╔╩╬╩╗╠═╣╔╝║╠═╗",
+        " ╩ ╩╩ ╩╚═╝ ╚═╝  ╩╚═╝╩ ╩╩═╝ ╩ ╩ ╩╩ ╩╝ ╩╩═╝"]
+    let MENU_BANNER:[String] = [
+        "               МЕНЮ ИГРЫ:                ",
+        "                                         ",
+        "   1 - НОВАЯ ИГРА",
+        "   2 - РАССТАВИТЬ КОРАБЛИ ВРУЧНУЮ",
+        "   3 - ВЫХОД                             ",
+        "   4 - СПРАВКА                           "]
+    let HELP_BANNER:[String] = [
+        "               СПРАВКА:                  ",
+        "   ЧТОБЫ СДЕЛАТЬ ХОД, НЕОБХОДИМО ВВЕСТИ  ",
+        "   БУКВУ СТОЛБЦА И НОМЕР СТРОКИ В ЛЮБОМ  ",
+        "   ПОРЯДКЕ И ЛЮБОМ РЕГИСТРЕ В АНГЛИЙСКОЙ ",
+        "   РАСКЛАДКЕ И НАЖАТЬ ENTER.             ",
+        "   БУКВА И ЧИСЛО МОГУТ БЫТЬ РАЗДЕЛЕНЫ    ",
+        "   ОДНИМ ПРОБЕЛОМ. ЧИСЛО 10 НЕ ДОЛЖНО    ",
+        "   БЫТЬ РАЗДЕЛЕНО.                       "]
+    
     enum GameStatus {
         case START
         case GAME
@@ -810,6 +900,18 @@ class Game {
         case PLAYER
         case OPPONENT
     }
+    
+    enum Theme {
+        case RESUME
+        case SET_COORD
+        case ERROR_COORD
+    }
+    
+    let phrases:[Theme:[String]] = [
+        .RESUME:["Нажми ENTER для продолжения...", ""],
+        .SET_COORD:["Укажи координаты?(или exit для выхода)", ""],
+        .ERROR_COORD:["Ты ошибся! Внимательнее!", ""]
+    ]
     
     let player: Participan
     let opponent: Participan
@@ -829,9 +931,12 @@ class Game {
     private func start() {
         let lField = player.getOpponentField()
         let rField = opponent.getOpponentField()
-        let _ = ui.DrawBanner(leftField:lField, rightField:rField, banner:.START)
-        let _ = ui.DrawBanner(leftField:lField, rightField:rField, banner:.MENU)
-        let _ = ui.DrawBanner(leftField:lField, rightField:rField, banner:.HELP)
+        ui.DrawBanner(leftField:lField, rightField:rField, line:11, col:20, banner:START_BANNER)
+        ui.DrawBanner(leftField:lField, rightField:rField, line:5, col:10, banner:MENU_BANNER)
+        ui.DrawBanner(leftField:lField, rightField:rField, line:5, col:10, banner:HELP_BANNER)
+        //let _ = ui.DrawBanner(leftField:lField, rightField:rField, banner:.START, info:phrases[.RESUME]![0])
+        //let _ = ui.DrawBanner(leftField:lField, rightField:rField, banner:.MENU, info:phrases[.RESUME]![0])
+        //let _ = ui.DrawBanner(leftField:lField, rightField:rField, banner:.HELP, info:phrases[.RESUME]![0])
         status = .GAME
     }
     
@@ -854,7 +959,7 @@ class Game {
             
             switch current {
             case .PLAYER:
-                if let pos = ui.GetCell(leftField:lField, rightField:rField) {
+                if let pos = ui.GetCell(leftField:lField, rightField:rField, request:phrases[.SET_COORD]![0], onError:phrases[.ERROR_COORD]![0]) {
                     if player.checkCell(pos:pos) == true {
                         ui.DrawBalisticAttack(pos:pos, to:.RIGHT, leftField:lField, rightField:rField)
                         if player.setResultAttack(pos:pos, res:opponent.checkAttack(pos:pos)) {
@@ -907,9 +1012,12 @@ class Game {
         if win == nil {
             print("НЕВЕРОЯТНО, НО НИЧЬЯ ???!!!")
         } else if win == .PLAYER {
-            ui.DrawBanner(leftField:lField, rightField:rField, banner:.WIN)
+            //ui.DrawBanner(leftField:lField, rightField:rField, banner:.WIN, info:phrases[.RESUME]![0])
+            ui.DrawBanner(leftField:lField, rightField:rField, line:2, col:10, banner:WIN_BANNER)
+            //func DrawBanner(leftField:[[Cell]], rightField:[[Cell]], line:UInt, col:UInt, banner:[String], info:[String]) {
         } else {
-            ui.DrawBanner(leftField:lField, rightField:rField, banner:.LOST)
+            //ui.DrawBanner(leftField:lField, rightField:rField, banner:.LOST, info:phrases[.RESUME]![0])
+            ui.DrawBanner(leftField:lField, rightField:rField, line:2, col:10, banner:LOST_BANNER)
         }
         status = .EXIT
     }
