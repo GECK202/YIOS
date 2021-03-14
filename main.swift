@@ -275,19 +275,19 @@ final class UI {
         }
         SetInfo(col:0, line:0, info:"")
         SetInfo(col:0, line:1, info:"")
-        SetInfo(col:0, line:2, info:"Нажмите ENTER для продолжения...")
+        SetInfo(col:0, line:2, info:"Нажми ENTER для продолжения...")
         PrintBuff()
         _ = readLine()!
     }
 
-    func GetCell(leftField:[[Cell]], rightField:[[Cell]])->Position {
+    func GetCell(leftField:[[Cell]], rightField:[[Cell]])->Position? {
         let Map:[Character:Int] = ["a":0, "b":1, "c":2, "d":3, "e":4, "f":5, "g":6, "h":7, "i":8, "j":9]
         var x:Int = -1
         var y:Int = -1
         var ySet:Bool = false
         var xSet:Bool = false
         while true {
-            SetInfo(col:0, line:2, info:"Впишите клетку для атаки?")
+            SetInfo(col:0, line:2, info:"Укажи координаты?(или exit для выхода)")
             DrawFields(leftField:leftField, rightField:rightField)
             let k = readLine()!.lowercased()
             print("len=\(k.count)")
@@ -336,12 +336,10 @@ final class UI {
             SetInfo(col:0, line:1, info:"Вы ошиблись! Внимательнее!")
             DrawFields(leftField:leftField, rightField:rightField)
             if k == "exit" {
-                x = 0
-                y = 0
                 break
             }
         }
-        let pos = Position(x:x, y:y)!
+        let pos = Position(x:x, y:y)
         return pos
     }
 }
@@ -856,7 +854,7 @@ class Game {
             
             switch current {
             case .PLAYER:
-                let pos = ui.GetCell(leftField:lField, rightField:rField)
+                if let pos = ui.GetCell(leftField:lField, rightField:rField) {
                     if player.checkCell(pos:pos) == true {
                         ui.DrawBalisticAttack(pos:pos, to:.RIGHT, leftField:lField, rightField:rField)
                         if player.setResultAttack(pos:pos, res:opponent.checkAttack(pos:pos)) {
@@ -874,6 +872,10 @@ class Game {
                         }
                         let _ = player.randomMove()
                     }
+                } else {
+                    status = .FINISH
+                    return
+                }
             case .OPPONENT:
                 if let pos = opponent.autoMove() {
                     if opponent.checkCell(pos:pos) == true {
