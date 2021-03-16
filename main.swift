@@ -147,6 +147,27 @@ final class UI {
         }
     }
 
+    func SetInfo(col:Int = 0, line:Int = 0, info:String) {
+        let syms = Array(info)
+        if (0..<4).contains(line) {
+            let j = 13 + line
+            for i in col..<60 {
+                if (0..<60).contains(i) {
+                    if (i - col) < syms.count {
+                        buff[j][i] = syms[i - col]
+                    } else {
+                        buff[j][i] = " "
+                    }
+                }
+            }
+        }
+    }
+    
+    func SetRandomInfo(col:Int = 0, line:Int = 0, start:Int = 0, info:[String]) {
+        let index = Int.random(in: (start..<info.count))
+        SetInfo(col:col, line:line, info:info[index])
+    }
+    
     func DrawBalisticAttack(pos:Position, to:CurrentField, leftField:[[Cell]], rightField:[[Cell]]) {
         if to == .RIGHT {
             DrawBalisticAttackToRight(pos:pos, sym:"O", leftField:leftField, rightField:rightField)
@@ -196,36 +217,37 @@ final class UI {
         PrintBuff()
     }
 
-    func SetInfo(col:Int, line:Int, info:String) {
-        let syms = Array(info)
-        if (0..<4).contains(line) {
-            let j = 13 + line
-            for i in col..<60 {
-                if (0..<60).contains(i) {
-                    if (i - col) < syms.count {
-                        buff[j][i] = syms[i - col]
-                    } else {
-                        buff[j][i] = " "
-                    }
-                }
-            }
+    func SetInfos(info:[String] = []) {
+        switch info.count {
+        case 0:
+            SetInfo(col:0, line:0, info:"")
+            SetInfo(col:0, line:1, info:"")
+            SetInfo(col:0, line:2, info:"")
+        case 1:
+            SetInfo(col:0, line:0, info:"")
+            SetInfo(col:0, line:1, info:"")
+            SetInfo(col:0, line:2, info:info[0])
+        case 2:
+            SetInfo(col:0, line:0, info:"")
+            SetInfo(col:0, line:1, info:info[0])
+            SetInfo(col:0, line:2, info:info[1])
+        default:
+            SetInfo(col:0, line:0, info:info[0])
+            SetInfo(col:0, line:1, info:info[1])
+            SetInfo(col:0, line:2, info:info[2])
         }
-    }
-    
-    func DrawMenu(){
-        
     }
     
     func DrawBanner(leftField:[[Cell]], rightField:[[Cell]], line:Int, col:Int, banner:[String]) {
+        if line < 0 || line > 10 || col < 0 || col > 57 {
+            return
+        }
         var max_val = 1
-        var lastLine = min(12 - line, banner.count)  
-        for i in 0..<lastLine {
-            print("len[\(i)]=\(banner[i].count)")
+        let lastLine = min(12, banner.count + line + 1)  
+        for i in 0..<banner.count{
             max_val = max(banner[i].count, max_val)
         }
-        lastLine += line
         max_val = min(max_val + col + 1, 59)
-        print("len max=\(max_val)")
         ResetBuff(leftField:leftField, rightField:rightField)
         buff[line][col] = "╔"
         buff[line][max_val] = "╗"
@@ -256,91 +278,23 @@ final class UI {
                 break
             }
         }
-        
-        SetInfo(col:0, line:0, info:"")
-        SetInfo(col:0, line:1, info:"")
-        SetInfo(col:0, line:2, info:"PRESS ENTER ...")
-        PrintBuff()
-        _ = readLine()!
     }
 
-/*    
-    func DrawBanner(leftField:[[Cell]], rightField:[[Cell]], banner:Banner, info:String) {
-        var s:[String] = []
-        s.append("╔═════════════════════════════════════════╗")
-        switch banner {
-        case .START:
-            s.append("║  *** )─┼)***  ...o   . .      (┼─(      ║")
-            s.append("║   ** )─┼)*** ..     .   .  (┼─(┼─(┼─(   ║")
-            s.append("║╒══╕**)─┼) * .      .     . (┼─(┼─(┼ ╒══╕║")
-            s.append("║└─┐╘╦╬╦╦╬╦╦╬╦─>──  o    ──<─╦╬╦╦╬╦╦╬╦╛┌─┘║")
-            s.append("║ ╭╯~ ~~ ~~ ~~/ ~~ ~v ~~ ~~ \\~~ ~~ ~ ~~╰╮ ║")
-            s.append("║-   ╔╦╗╔═╗╦═╗╔═╗╦╔═╔═╗╦║╔╗ ╦═╗╔═╗╦║╔╗   -║")
-            s.append("║--  ║║║║ ║╠═╝║  ╠╩╗║ ║║╔╝║ ╠═╗║ ║║╔╝║  --║")
-            s.append("║-   ╩ ╩╚═╝╩  ╚═╝╩ ╩╩═╝╚╝ ╩ ╩═╝╩═╝╚╝ ╩   -║")
-            
-        case .WIN:
-            s.append("║   ╔╦╗╦ ╦ ╔╗ ╦ ╦╦ ╔╗╦═╗╦═╗╔═╗ ╔╗ ┬ ┬ ┬   ║")
-            s.append("║    ║ ╠╗║ ╠╩╗╠╗║║╔╝║║  ╠═╝╠═╣╔╝║ │ │ │   ║")
-            s.append("║    ╩ ╚╝╩ ╚═╝╚╝╩╚╝ ╩╩  ╩  ╩ ╩╝ ╩ o o o   ║")
-            s.append("║    ╔═╗╔═╗╔═╗ ╔╗ ╦═╗╔═╗╔╗  ╔╗╔═╗╦╔═╗     ║")
-            s.append("║    ║ ║║ ║ ═║ ║║ ╠═╝╠═╣╠╩╗╔╝║╚╦╣╠╣ ║     ║")
-            s.append("║    ╩ ╩╚═╝╚═╝╔╩╩╗╩  ╩ ╩╚═╝╝ ╩═╝╩╩╚═╝     ║")
-        case .LOST:
-            s.append("║  ╔╦╗╦ ╦ ╔═╗╦═╗╔═╗╦ ╔╗╦═╗╦═╗╔═╗ ╔╗ ┬ ┬ ┬ ║")
-            s.append("║   ║ ╠╗║ ║ ║╠═╝║ ║║╔╝║║  ╠═╝╠═╣╔╝║ │ │ │ ║")
-            s.append("║   ╩ ╚╝╩ ╩ ╩╩  ╚═╝╚╝ ╩╩  ╩  ╩ ╩╝ ╩ o o o ║")
-            s.append("║ ╔╦╗╦ ╦╔═╗ ╔═╗╦ ╦╔═╗╦ ╦╦   ═╗╦╔═╔═╗ ╔╗╦  ║")
-            s.append("║ ║║║╠═╣║╣  ║ ║╚═╣║╣ ╠═╣╠═╗ ╔╩╬╩╗╠═╣╔╝║╠═╗║")
-            s.append("║ ╩ ╩╩ ╩╚═╝ ╚═╝  ╩╚═╝╩ ╩╩═╝ ╩ ╩ ╩╩ ╩╝ ╩╩═╝║")
-        case .MENU:
-            s.append("║               МЕНЮ ИГРЫ:                ║")
-            s.append("║                                         ║")
-            s.append("║   1 - НОВАЯ ИГРА                        ║")
-            s.append("║   2 - РАССТАВИТЬ КОРАБЛИ ВРУЧНУЮ        ║")
-            s.append("║   3 - ВЫХОД                             ║")
-            s.append("║   4 - СПРАВКА                           ║")
-        case .HELP:
-            s.append("║               СПРАВКА:                  ║")
-            s.append("║   ЧТОБЫ СДЕЛАТЬ ХОД, НЕОБХОДИМО ВВЕСТИ  ║")
-            s.append("║   БУКВУ СТОЛБЦА И НОМЕР СТРОКИ В ЛЮБОМ  ║")
-            s.append("║   ПОРЯДКЕ И ЛЮБОМ РЕГИСТРЕ В АНГЛИЙСКОЙ ║")
-            s.append("║   РАСКЛАДКЕ И НАЖАТЬ ENTER.             ║")
-            s.append("║   БУКВА И ЧИСЛО МОГУТ БЫТЬ РАЗДЕЛЕНЫ    ║")
-            s.append("║   ОДНИМ ПРОБЕЛОМ. ЧИСЛО 10 НЕ ДОЛЖНО    ║")
-            s.append("║   БЫТЬ РАЗДЕЛЕНО.                       ║")
-        }
-        
-        s.append("╚═════════════════════════════════════════╝")
-        ResetBuff(leftField:leftField, rightField:rightField)
-        var j = 2
-        for n in s {
-            var i = 10
-            for l in n {
-                buff[j][i] = l
-                i += 1
-            }
-            j += 1
-        }
-        SetInfo(col:0, line:0, info:"")
-        SetInfo(col:0, line:1, info:"")
-        SetInfo(col:0, line:2, info:info)
-        PrintBuff()
-        _ = readLine()!
-    }
-
-*/
-
-    func GetCell(leftField:[[Cell]], rightField:[[Cell]], request:String, onError:String)->Position? {
+    func GetCell(leftField:[[Cell]], rightField:[[Cell]], request:[String], exitWord:String, onError:String)->Position? {
         let Map:[Character:Int] = ["a":0, "b":1, "c":2, "d":3, "e":4, "f":5, "g":6, "h":7, "i":8, "j":9]
         var x:Int = -1
         var y:Int = -1
         var ySet:Bool = false
         var xSet:Bool = false
         while true {
-            SetInfo(col:0, line:2, info:request)
+            if request.count > 0 {
+                SetInfos(info:request)
+            }
             DrawFields(leftField:leftField, rightField:rightField)
             let k = readLine()!.lowercased()
+            if k == exitWord {
+                break
+            }
             if (2...4).contains(k.count) {
                 x = -1; y = -1
                 xSet = false; ySet = false
@@ -383,14 +337,32 @@ final class UI {
                     break
                 }
             }
-            SetInfo(col:0, line:1, info:onError)
+            SetInfo(line:0, info:onError)
             DrawFields(leftField:leftField, rightField:rightField)
-            if k == "exit" {
-                break
-            }
         }
         let pos = Position(x:x, y:y)
         return pos
+    }
+
+    func GetPress(info:[String] = ["","","Press Enter..."]) {
+        SetInfos(info:info)
+        PrintBuff()
+        _ = readLine()!
+    }
+
+    func GetNumber(info:[String], numbers:ClosedRange<Int>, onError:String)->Int {
+        SetInfos(info:info)
+        PrintBuff()
+        while true {
+            if let n:Int = Int(readLine()!) {
+                if numbers.contains(n) {
+                    return n
+                }
+            }
+            SetInfos(info:info)
+            SetInfo(info:onError)
+            PrintBuff()
+        }
     }
 }
 
@@ -466,9 +438,7 @@ class Participan {
     private var destroyShips = 0
     
     init() {
-        clean()
         randomSetShips()
-        deleteStop()
     }
     
     private func checkStartPosition(_ x:Int, _ y:Int, _ size:Int, _ orient:Participan.Orient)-> Bool {
@@ -494,16 +464,6 @@ class Participan {
             }
             return true
         }
-    }
-    
-    private func clean() {
-        opponentField = Participan.CLEAN_FIELD
-        shipsCount = Participan.SHIPS_COUNT
-        selfField = Participan.CLEAN_FIELD
-        lastMove = nil
-        goodLastMove = nil
-        curDirection = Direction.LEFT
-        destroyShips = 0
     }
     
     private func deleteStop() {
@@ -632,6 +592,40 @@ class Participan {
         return list
     }
     
+    func clean() {
+        opponentField = Participan.CLEAN_FIELD
+        shipsCount = Participan.SHIPS_COUNT
+        selfField = Participan.CLEAN_FIELD
+        lastMove = nil
+        goodLastMove = nil
+        curDirection = Direction.LEFT
+        destroyShips = 0
+    }
+
+    func randomSetShips() {
+        clean()
+        while true {
+            var index = 4
+            shipsCount = Participan.SHIPS_COUNT
+            selfField = Participan.CLEAN_FIELD
+            for _ in 0...1000 {
+                let list = emptyCellList(from:selfField)
+                if shipsCount[index] == 0 {
+                    index -= 1
+                }
+                if index == 0 {
+                    deleteStop()
+                    return
+                }
+                let ind:Int = Int.random(in: (0..<list.count))
+                let size:Int = index
+                let orient = Orient.allCases.randomElement()!
+                let pos = Position(x:list[ind].0, y:list[ind].1)!
+                let _ = addShip(pos:pos, size:size, orient:orient)
+            }
+        }
+    }
+
     func randomMove()->Position?{
         let list = emptyCellList(from:opponentField)
         if list.isEmpty {
@@ -654,43 +648,22 @@ class Participan {
         return true
     }
     
-    func randomSetShips() {
-        while (true){
-            var index = 4
-            shipsCount = Participan.SHIPS_COUNT
-            selfField = Participan.CLEAN_FIELD
-            for _ in 0...1000 {
-                let list = emptyCellList(from:selfField)
-                if shipsCount[index] == 0 {
-                    index -= 1
-                }
-                if index == 0 {
-                    return
-                }
-                let ind:Int = Int.random(in: (0..<list.count))
-                let size:Int = index
-                let orient = Orient.allCases.randomElement()!
-                let _ = addShip(list[ind].0, list[ind].1, size, orient)
-            }
-        }
-    }
-    
-    func addShip(_ x:Int, _ y:Int, _ size:Int, _ orient:Orient = .HORIZONTAL)-> Bool {
+    func addShip(pos:Position, size:Int, orient:Orient = .HORIZONTAL)-> Bool {
         if !Participan.SIZE_RANGE.contains(size) ||
-            !TABLE_RANGE.contains(x) ||
-            !TABLE_RANGE.contains(y) ||
+            !TABLE_RANGE.contains(pos.x) ||
+            !TABLE_RANGE.contains(pos.y) ||
             shipsCount[size] == 0 ||
-            selfField[y][x] != .NONE ||
-            (!checkStartPosition(x, y, size, orient)) {
+            selfField[pos.y][pos.x] != .NONE ||
+            (!checkStartPosition(pos.x, pos.y, size, orient)) {
                 return false
         }
         switch (orient) {
         case .HORIZONTAL:
-            for j in (y - 1)...(y + 1) {
+            for j in (pos.y - 1)...(pos.y + 1) {
                 if !TABLE_RANGE.contains(j) { continue }
-                for i in (x - 1)...(x + size) {
+                for i in (pos.x - 1)...(pos.x + size) {
                     if !TABLE_RANGE.contains(i) { continue }
-                    if j == y && i >= x && i < x + size {
+                    if j == pos.y && i >= pos.x && i < pos.x + size {
                         selfField[j][i] = Cell.SHIP
                     } else {
                         selfField[j][i] = Cell.STOP
@@ -700,11 +673,11 @@ class Participan {
             shipsCount[size] -= 1
             return true
         case .VERTICAL:
-            for i in (x - 1)...(x + 1) {
+            for i in (pos.x - 1)...(pos.x + 1) {
                 if !TABLE_RANGE.contains(i) { continue }
-                for j in (y - 1)...(y + size) {
+                for j in (pos.y - 1)...(pos.y + size) {
                     if !TABLE_RANGE.contains(j) { continue }
-                    if i == x && j >= y && j < y + size {
+                    if i == pos.x && j >= pos.y && j < pos.y + size {
                         selfField[j][i] = Cell.SHIP
                     } else {
                         selfField[j][i] = Cell.STOP
@@ -849,48 +822,56 @@ class Participan {
 }
 
 class Game {
+    let AVATAR:String = "🤴"
     let START_BANNER:[String] = [
-        "  *** )─┼)***  ...o   . .      (┼─(      ",
-        "   ** )─┼)*** ..     .   .  (┼─(┼─(┼─(   ",
+        "  *** )─┼)***  ...o   . .      (┼─(",
+        "   ** )─┼)*** ..     .   .  (┼─(┼─(┼─(",
         "╒══╕**)─┼) * .      .     . (┼─(┼─(┼ ╒══╕",
         "└─┐╘╦╬╦╦╬╦╦╬╦─>──  o    ──<─╦╬╦╦╬╦╦╬╦╛┌─┘",
-        " ╭╯~ ~~ ~~ ~~/ ~~ ~v ~~ ~~ \\~~ ~~ ~ ~~╰╮ ",
+        " ╭╯~ ~~ ~~ ~~/ ~~ ~v ~~ ~~ \\~~ ~~ ~ ~~╰╮",
         "-   ╔╦╗╔═╗╦═╗╔═╗╦╔═╔═╗╦║╔╗ ╦═╗╔═╗╦║╔╗   -",
         "--  ║║║║ ║╠═╝║  ╠╩╗║ ║║╔╝║ ╠═╗║ ║║╔╝║  --",
         "-   ╩ ╩╚═╝╩  ╚═╝╩ ╩╩═╝╚╝ ╩ ╩═╝╩═╝╚╝ ╩   -"]
     let WIN_BANNER:[String] = [
         "   ╔╦╗╦ ╦ ╔╗ ╦ ╦╦ ╔╗╦═╗╦═╗╔═╗ ╔╗ ┬ ┬ ┬   ",
-        "    ║ ╠╗║ ╠╩╗╠╗║║╔╝║║  ╠═╝╠═╣╔╝║ │ │ │   ",
-        "    ╩ ╚╝╩ ╚═╝╚╝╩╚╝ ╩╩  ╩  ╩ ╩╝ ╩ o o o   ",
-        "    ╔═╗╔═╗╔═╗ ╔╗ ╦═╗╔═╗╔╗  ╔╗╔═╗╦╔═╗     ",
-        "    ║ ║║ ║ ═║ ║║ ╠═╝╠═╣╠╩╗╔╝║╚╦╣╠╣ ║     ",
-        "    ╩ ╩╚═╝╚═╝╔╩╩╗╩  ╩ ╩╚═╝╝ ╩═╝╩╩╚═╝     "]
+        "    ║ ╠╗║ ╠╩╗╠╗║║╔╝║║  ╠═╝╠═╣╔╝║ │ │ │",
+        "    ╩ ╚╝╩ ╚═╝╚╝╩╚╝ ╩╩  ╩  ╩ ╩╝ ╩ o o o",
+        "    ╔═╗╔═╗╔═╗ ╔╗ ╦═╗╔═╗╔╗  ╔╗╔═╗╦╔═╗",
+        "    ║ ║║ ║ ═║ ║║ ╠═╝╠═╣╠╩╗╔╝║╚╦╣╠╣ ║",
+        "    ╩ ╩╚═╝╚═╝╔╩╩╗╩  ╩ ╩╚═╝╝ ╩═╝╩╩╚═╝"]
     let LOST_BANNER:[String] = [
-        "  ╔╦╗╦ ╦ ╔═╗╦═╗╔═╗╦ ╔╗╦═╗╦═╗╔═╗ ╔╗ ┬ ┬ ┬ ",
-        "   ║ ╠╗║ ║ ║╠═╝║ ║║╔╝║║  ╠═╝╠═╣╔╝║ │ │ │ ",
-        "   ╩ ╚╝╩ ╩ ╩╩  ╚═╝╚╝ ╩╩  ╩  ╩ ╩╝ ╩ o o o ",
-        " ╔╦╗╦ ╦╔═╗ ╔═╗╦ ╦╔═╗╦ ╦╦   ═╗╦╔═╔═╗ ╔╗╦  ",
+        "  ╔╦╗╦ ╦ ╔═╗╦═╗╔═╗╦ ╔╗╦═╗╦═╗╔═╗ ╔╗ ┬ ┬ ┬",
+        "   ║ ╠╗║ ║ ║╠═╝║ ║║╔╝║║  ╠═╝╠═╣╔╝║ │ │ │",
+        "   ╩ ╚╝╩ ╩ ╩╩  ╚═╝╚╝ ╩╩  ╩  ╩ ╩╝ ╩ o o o",
+        " ╔╦╗╦ ╦╔═╗ ╔═╗╦ ╦╔═╗╦ ╦╦   ═╗╦╔═╔═╗ ╔╗╦",
         " ║║║╠═╣║╣  ║ ║╚═╣║╣ ╠═╣╠═╗ ╔╩╬╩╗╠═╣╔╝║╠═╗",
         " ╩ ╩╩ ╩╚═╝ ╚═╝  ╩╚═╝╩ ╩╩═╝ ╩ ╩ ╩╩ ╩╝ ╩╩═╝"]
     let MENU_BANNER:[String] = [
-        "               МЕНЮ ИГРЫ:                ",
-        "                                         ",
+        "               МЕНЮ ИГРЫ:",
+        "",
         "   1 - НОВАЯ ИГРА",
-        "   2 - РАССТАВИТЬ КОРАБЛИ ВРУЧНУЮ",
-        "   3 - ВЫХОД                             ",
-        "   4 - СПРАВКА                           "]
+        "   2 - РАССТАВИТЬ КОРАБЛИ ВРУЧНУЮ   ",
+        "   3 - ПОКИНУТЬ ИГРУ",
+        "   4 - СПРАВКА"]
+    let MENU_SET_SHIP_BANNER:[String] = [
+        " 1 - ВОЗВРАТ К УСТАНОВКЕ КОРАБЛЕЙ ",
+        " 2 - ИЗМЕНИТЬ ПОВОРОТ",
+        " 3 - ВЫХОД В МЕНЮ"]
     let HELP_BANNER:[String] = [
-        "               СПРАВКА:                  ",
-        "   ЧТОБЫ СДЕЛАТЬ ХОД, НЕОБХОДИМО ВВЕСТИ  ",
-        "   БУКВУ СТОЛБЦА И НОМЕР СТРОКИ В ЛЮБОМ  ",
-        "   ПОРЯДКЕ И ЛЮБОМ РЕГИСТРЕ В АНГЛИЙСКОЙ ",
-        "   РАСКЛАДКЕ И НАЖАТЬ ENTER.             ",
-        "   БУКВА И ЧИСЛО МОГУТ БЫТЬ РАЗДЕЛЕНЫ    ",
-        "   ОДНИМ ПРОБЕЛОМ. ЧИСЛО 10 НЕ ДОЛЖНО    ",
-        "   БЫТЬ РАЗДЕЛЕНО.                       "]
+        "             СПРАВКА:",
+        " ЧТОБЫ СДЕЛАТЬ  ХОД, НЕОБХОДИМО ВВЕСТИ БУКВУ",
+        " СТОЛБЦА  И  НОМЕР СТРОКИ  В ЛЮБОМ ПОРЯДКЕ И",
+        " ЛЮБОМ   РЕГИСТРЕ   В  АНГЛИЙСКОЙ  РАСКЛАДКЕ",
+        " И НАЖАТЬ Enter.",
+        " БУКВА  И  ЧИСЛО  МОГУТ БЫТЬ РАЗДЕЛЕНЫ ОДНИМ",
+        " ПРОБЕЛОМ. ЧИСЛО 10 НЕ ДОЛЖНО БЫТЬ РАЗДЕЛЕНО.",
+        " ДЛЯ  ПРЕКРАЩЕНИЯ  ИГРЫ  ИЛИ ВЫЗОВА МЕНЮ ДЛЯ",
+        " НАСТРОЕК - ВВЕСТИ menu И НАЖАТЬ Enter."]
     
     enum GameStatus {
         case START
+        case MENU
+        case MANUAL_SET_SHIPS
         case GAME
         case FINISH
         case EXIT
@@ -901,17 +882,6 @@ class Game {
         case OPPONENT
     }
     
-    enum Theme {
-        case RESUME
-        case SET_COORD
-        case ERROR_COORD
-    }
-    
-    let phrases:[Theme:[String]] = [
-        .RESUME:["Нажми ENTER для продолжения...", ""],
-        .SET_COORD:["Укажи координаты?(или exit для выхода)", ""],
-        .ERROR_COORD:["Ты ошибся! Внимательнее!", ""]
-    ]
     
     let player: Participan
     let opponent: Participan
@@ -920,27 +890,137 @@ class Game {
     var win:Current?
     var status = GameStatus.START
     
+    enum Theme {
+        case GREETING
+        case RESUME
+        case SET_COORD
+        case SELECT_MENU
+        case ERR_COORD
+        case ERR_MENU
+        case SET_SHIP_MANUAL
+        case SET_SHIP_MANUAL_ERR
+        case SET_SHIP_MANUAL_INV
+        case SET_SHIP_MANUAL_RESUME
+    }
+    
+    let phrases:[Theme:[String]]
+    
     init(player:Participan, opponent:Participan) {
         self.player = player
         self.opponent = opponent
         ui = UI.instance()
         current = Current.allCases.randomElement()!
         status = GameStatus.START
+        phrases = [
+            .GREETING:["\(AVATAR) Приветствую тебя герой!","Пришла пора вступить в бой!","Нажми ENTER для продолжения..."],
+            .RESUME:["\(AVATAR)","Прочти внимательно", "и нажми ENTER для продолжения..."],
+            .SET_COORD:[AVATAR,"Укажи координаты?","(или menu для выхода в меню)"],
+            .SELECT_MENU:[AVATAR,"Укажи номер пункта меню и нажми Enter",""],
+            .ERR_COORD:["\(AVATAR) Ты ошибся! Будь внимательнее!"],
+            .ERR_MENU:["\(AVATAR) Нет такого пункта! Будь внимательнее!"],
+            .SET_SHIP_MANUAL:["\(AVATAR) Тебе необходимо умело расставить все корабли",
+                "\(AVATAR) осталось ещё немного","\(AVATAR) отлично продолжай в том же духе!","\(AVATAR) отлично!!!"],
+            .SET_SHIP_MANUAL_ERR:["\(AVATAR) выбери другую клетку для этого корабля!"],
+            .SET_SHIP_MANUAL_INV:["Укажи клетку для корабля (или menu - для вызова настроек)"],
+            .SET_SHIP_MANUAL_RESUME:["\(AVATAR) Отлично! Все корабли на своих местах","Враг не должен догадаться.",
+                "Пора приступать - жми ENTER для продолжения..."],
+        ]
     }
     
-    private func start() {
+    private func Start() {
         let lField = player.getOpponentField()
         let rField = opponent.getOpponentField()
-        ui.DrawBanner(leftField:lField, rightField:rField, line:11, col:20, banner:START_BANNER)
-        ui.DrawBanner(leftField:lField, rightField:rField, line:5, col:10, banner:MENU_BANNER)
-        ui.DrawBanner(leftField:lField, rightField:rField, line:5, col:10, banner:HELP_BANNER)
-        //let _ = ui.DrawBanner(leftField:lField, rightField:rField, banner:.START, info:phrases[.RESUME]![0])
-        //let _ = ui.DrawBanner(leftField:lField, rightField:rField, banner:.MENU, info:phrases[.RESUME]![0])
-        //let _ = ui.DrawBanner(leftField:lField, rightField:rField, banner:.HELP, info:phrases[.RESUME]![0])
+        ui.DrawBanner(leftField:lField, rightField:rField, line:2, col:10, banner:START_BANNER)
+        ui.GetPress(info:phrases[.GREETING]!)
+        status = .MENU
+    }
+    
+    private func Menu() {
+        let lField = player.getOpponentField()
+        let rField = opponent.getOpponentField()
+        ui.DrawBanner(leftField:lField, rightField:rField, line:2, col:10, banner:MENU_BANNER)
+        let k = ui.GetNumber(info:phrases[.SELECT_MENU]!, numbers:1...4, onError:phrases[.ERR_MENU]![0])
+        switch k {
+        case 1:
+            player.randomSetShips()
+            opponent.randomSetShips()
+            status = .GAME
+        case 2:
+            player.clean()
+            opponent.randomSetShips()
+            status = .MANUAL_SET_SHIPS
+        case 3:
+            status = .EXIT
+        case 4:
+            ui.DrawBanner(leftField:lField, rightField:rField, line:1, col:5, banner:HELP_BANNER)
+            ui.GetPress(info:phrases[.RESUME]!)
+        default:
+            break
+        }
+    }
+    
+    private func ManualSetShips() {
+        var horizontalOrient = true
+        ui.SetInfo(info:phrases[.SET_SHIP_MANUAL]![0])
+        for size in stride(from:4, to:0, by:-1) {
+            var count = 5 - size
+            while count > 0 {
+                var curOrient:String = ""
+                if size > 1 {
+                    curOrient = horizontalOrient ? " (поворот - горизонтально)" : " (поворот - вертикально)"
+                }
+                let suff = size > 1 ? "-х" : ""
+                ui.SetInfo(line:1, info: "Установи \(size)\(suff) палубный корабль\(curOrient)")
+                ui.SetInfo(line:2, info:phrases[.SET_SHIP_MANUAL_INV]![0])
+                if let pos:Position = ui.GetCell(leftField:player.getSelfField(),
+                        rightField:player.getOpponentField(),
+                        request:[],
+                        exitWord:"menu",
+                        onError:phrases[.ERR_COORD]![0]) {
+                    var res = true
+                    if horizontalOrient {
+                        if player.addShip(pos:pos, size:size, orient:.HORIZONTAL) {
+                            count -= 1
+                        } else {
+                            res = false
+                        }
+                    } else {
+                        if player.addShip(pos:pos, size:size, orient:.VERTICAL) {
+                            count -= 1
+                        } else {
+                            res = false
+                        }
+                    }
+                    if res == false {
+                        ui.SetInfo(info:phrases[.SET_SHIP_MANUAL_ERR]![0])
+                    } else {
+                        ui.SetRandomInfo(start:1, info:phrases[.SET_SHIP_MANUAL]!)
+                    }
+                } else {
+                    ui.DrawBanner(leftField:player.getSelfField(),
+                    rightField:player.getOpponentField(),
+                    line:2, col:24, 
+                    banner:MENU_SET_SHIP_BANNER)
+                    switch (ui.GetNumber(info:phrases[.SELECT_MENU]!, numbers:1...3, onError:phrases[.ERR_MENU]![0])) {
+                    case 2:
+                        horizontalOrient = !horizontalOrient
+                    case 3:
+                        status = .MENU
+                        return
+                    default:
+                        break
+                    }
+                }
+            }
+        }
+        ui.DrawFields(leftField:player.getSelfField(), rightField:player.getOpponentField())
+        ui.GetPress(info:phrases[.SET_SHIP_MANUAL_RESUME]!)
         status = .GAME
     }
     
-    private func game() {
+    private func Game() {
+        current = Current.allCases.randomElement()!
+        
         for n in 0...200 {
             let lField = player.getSelfField()
             let rField = player.getOpponentField()
@@ -959,7 +1039,11 @@ class Game {
             
             switch current {
             case .PLAYER:
-                if let pos = ui.GetCell(leftField:lField, rightField:rField, request:phrases[.SET_COORD]![0], onError:phrases[.ERROR_COORD]![0]) {
+                if let pos = ui.GetCell(leftField:lField,
+                        rightField:rField,
+                        request:phrases[.SET_COORD]!,
+                        exitWord:"menu",
+                        onError:phrases[.ERR_COORD]![0]) {
                     if player.checkCell(pos:pos) == true {
                         ui.DrawBalisticAttack(pos:pos, to:.RIGHT, leftField:lField, rightField:rField)
                         if player.setResultAttack(pos:pos, res:opponent.checkAttack(pos:pos)) {
@@ -1006,28 +1090,27 @@ class Game {
         status = .FINISH
     }
     
-    private func finish() {
+    private func Finish() {
         let lField = player.getSelfField()
         let rField = opponent.getSelfField()
         if win == nil {
             print("НЕВЕРОЯТНО, НО НИЧЬЯ ???!!!")
         } else if win == .PLAYER {
-            //ui.DrawBanner(leftField:lField, rightField:rField, banner:.WIN, info:phrases[.RESUME]![0])
             ui.DrawBanner(leftField:lField, rightField:rField, line:2, col:10, banner:WIN_BANNER)
-            //func DrawBanner(leftField:[[Cell]], rightField:[[Cell]], line:UInt, col:UInt, banner:[String], info:[String]) {
         } else {
-            //ui.DrawBanner(leftField:lField, rightField:rField, banner:.LOST, info:phrases[.RESUME]![0])
             ui.DrawBanner(leftField:lField, rightField:rField, line:2, col:10, banner:LOST_BANNER)
         }
-        status = .EXIT
+        status = .MENU
     }
     
     func update() {
         while true {
             switch status {
-            case .START: start()
-            case .GAME: game()
-            case .FINISH: finish()
+            case .START: Start()
+            case .MENU: Menu()
+            case .MANUAL_SET_SHIPS: ManualSetShips()
+            case .GAME: Game()
+            case .FINISH: Finish()
             case .EXIT: return
             }
         }
