@@ -280,7 +280,7 @@ final class UI {
         }
     }
 
-    func GetCell(leftField:[[Cell]], rightField:[[Cell]], request:[String], exitWord:String, onError:String)->Position? {
+    func GetCell(leftField:[[Cell]], rightField:[[Cell]], request:[String] = [], exitWord:String, onError:String)->Position? {
         let Map:[Character:Int] = ["a":0, "b":1, "c":2, "d":3, "e":4, "f":5, "g":6, "h":7, "i":8, "j":9]
         var x:Int = -1
         var y:Int = -1
@@ -466,7 +466,7 @@ class Participan {
         }
     }
     
-    private func deleteStop() {
+    func deleteStop() {
         for j in TABLE_RANGE {
         for i in TABLE_RANGE {
            if selfField[j][i] == .STOP {
@@ -901,6 +901,16 @@ class Game {
         case SET_SHIP_MANUAL_ERR
         case SET_SHIP_MANUAL_INV
         case SET_SHIP_MANUAL_RESUME
+        case FIRST_MOVE_PLAYER
+        case FIRST_MOVE_OPPONENT
+        case MOVE_PLAYER_GOOD
+        case MOVE_PLAYER_BAD
+        case MOVE_OPPONENT_GOOD
+        case MOVE_OPPONENT_BAD
+        case PLAYER_DESTROY_SHIP
+        case PLAYER_LOST_SHIP
+        case PLAYER_WIN
+        case PLAYER_LOST
     }
     
     let phrases:[Theme:[String]]
@@ -914,20 +924,30 @@ class Game {
         phrases = [
             .GREETING:["\(AVATAR) Приветствую тебя герой!","Пришла пора вступить в бой!","Нажми ENTER для продолжения..."],
             .RESUME:["\(AVATAR)","Прочти внимательно", "и нажми ENTER для продолжения..."],
-            .SET_COORD:[AVATAR,"Укажи координаты?","(или menu для выхода в меню)"],
+            .SET_COORD:[AVATAR,"Укажи координаты для атаки?","(или menu для выхода в меню)"],
             .SELECT_MENU:[AVATAR,"Укажи номер пункта меню и нажми Enter",""],
             .ERR_COORD:["\(AVATAR) Ты ошибся! Будь внимательнее!"],
             .ERR_MENU:["\(AVATAR) Нет такого пункта! Будь внимательнее!"],
-            .SET_SHIP_MANUAL:["\(AVATAR) Тебе необходимо умело расставить все корабли",
+            .SET_SHIP_MANUAL:["\(AVATAR) Тебе необходимо умело расставить 10 кораблей",
                 "\(AVATAR) осталось ещё немного","\(AVATAR) отлично продолжай в том же духе!","\(AVATAR) отлично!!!"],
             .SET_SHIP_MANUAL_ERR:["\(AVATAR) выбери другую клетку для этого корабля!"],
             .SET_SHIP_MANUAL_INV:["Укажи клетку для корабля (или menu - для вызова настроек)"],
             .SET_SHIP_MANUAL_RESUME:["\(AVATAR) Отлично! Все корабли на своих местах","Враг не должен догадаться.",
                 "Пора приступать - жми ENTER для продолжения..."],
+            .FIRST_MOVE_PLAYER:[AVATAR, "Право первого хода досталось тебе", "Битва началась! Жми Enter!"],
+            .FIRST_MOVE_OPPONENT:[AVATAR, "Первым ходит противник", "Битва началась! Жми Enter!"],
+            .MOVE_PLAYER_GOOD:["\(AVATAR) Отличный ход","\(AVATAR) Продолжай атаковать","\(AVATAR) Добей этот корабль"],
+            .MOVE_PLAYER_BAD:["\(AVATAR) Ты промахнулся","\(AVATAR) Мимо...","\(AVATAR) Бей точнее"],
+            .MOVE_OPPONENT_GOOD:["\(AVATAR) Он попал в наш корабль","\(AVATAR) Противник атакует"],
+            .MOVE_OPPONENT_BAD:["\(AVATAR) Противник промахнулся","\(AVATAR) Сейчас наш ход"],
+            .PLAYER_DESTROY_SHIP:["\(AVATAR) Корабль противника уничтожен!"],
+            .PLAYER_LOST_SHIP:["\(AVATAR) Он уничтожил наш корабль!"],
+            .PLAYER_WIN:[],
+            .PLAYER_LOST:[]
         ]
     }
     
-    private func Start() {
+    private func start() {
         let lField = player.getOpponentField()
         let rField = opponent.getOpponentField()
         ui.DrawBanner(leftField:lField, rightField:rField, line:2, col:10, banner:START_BANNER)
@@ -935,7 +955,7 @@ class Game {
         status = .MENU
     }
     
-    private func Menu() {
+    private func menu() {
         let lField = player.getOpponentField()
         let rField = opponent.getOpponentField()
         ui.DrawBanner(leftField:lField, rightField:rField, line:2, col:10, banner:MENU_BANNER)
@@ -959,7 +979,7 @@ class Game {
         }
     }
     
-    private func ManualSetShips() {
+    private func manualSetShips() {
         var horizontalOrient = true
         ui.SetInfo(info:phrases[.SET_SHIP_MANUAL]![0])
         for size in stride(from:4, to:0, by:-1) {
@@ -1013,42 +1033,60 @@ class Game {
                 }
             }
         }
+        player.deleteStop()
         ui.DrawFields(leftField:player.getSelfField(), rightField:player.getOpponentField())
         ui.GetPress(info:phrases[.SET_SHIP_MANUAL_RESUME]!)
         status = .GAME
     }
     
-    private func Game() {
+    private func game() {
         current = Current.allCases.randomElement()!
-        
-        for n in 0...200 {
+        switch current {
+        case .PLAYER:
+            ui.GetPress(info:phrases[.FIRST_MOVE_PLAYER]!)
+        case .OPPONENT:
+            ui.GetPress(info:phrases[.FIRST_MOVE_OPPONENT]!)
+        }
+        var lostShips = 0
+        var destroyShips = 0
+        ui.SetInfos(info:phrases[.SET_COORD]!)
+        for n in 0...199 {
             let lField = player.getSelfField()
             let rField = player.getOpponentField()
+            let curDestroyShips = player.getDestroyShips()
+            let curLostShips = opponent.getDestroyShips()
             
-            if player.getDestroyShips() == 10 {
+            if curDestroyShips == 10 {
                 win = .PLAYER
                 status = .FINISH
                 return
-            }
-            
-            if opponent.getDestroyShips() == 10 {
+            } else if curLostShips == 10 {
                 win = .OPPONENT
                 status = .FINISH
                 return
+            } else if curDestroyShips > destroyShips {
+                destroyShips = curDestroyShips
+                ui.SetInfo(info:phrases[.PLAYER_DESTROY_SHIP]![0])
+                ui.SetInfo(line:1, info:"Счёт: уничтожено:\(destroyShips) потеряно:\(lostShips)")
+            } else if curLostShips > lostShips {
+                lostShips = curLostShips
+                ui.SetInfo(info:phrases[.PLAYER_LOST_SHIP]![0])
+                ui.SetInfo(line:1, info:"Счёт: уничтожено:\(destroyShips) потеряно:\(lostShips)")
             }
-            
             switch current {
             case .PLAYER:
                 if let pos = ui.GetCell(leftField:lField,
                         rightField:rField,
-                        request:phrases[.SET_COORD]!,
                         exitWord:"menu",
                         onError:phrases[.ERR_COORD]![0]) {
                     if player.checkCell(pos:pos) == true {
                         ui.DrawBalisticAttack(pos:pos, to:.RIGHT, leftField:lField, rightField:rField)
                         if player.setResultAttack(pos:pos, res:opponent.checkAttack(pos:pos)) {
+                            ui.SetInfos(info:phrases[.SET_COORD]!)
+                            ui.SetRandomInfo(info:phrases[.MOVE_PLAYER_GOOD]!)
                             ui.DrawWave(pos:pos, to:.RIGHT, leftField:lField, rightField:rField)
                         } else {
+                            ui.SetRandomInfo(info:phrases[.MOVE_PLAYER_BAD]!)
                             ui.DrawUPSS(pos:pos, to:.RIGHT, leftField:lField, rightField:rField)
                             current = .OPPONENT
                         }
@@ -1059,7 +1097,7 @@ class Game {
                             print("Неожиданный выход 1 ходов=\(n)")
                             return
                         }
-                        let _ = player.randomMove()
+                        //let _ = player.randomMove()
                     }
                 } else {
                     status = .FINISH
@@ -1070,8 +1108,11 @@ class Game {
                     if opponent.checkCell(pos:pos) == true {
                         ui.DrawBalisticAttack(pos:pos, to:.LEFT, leftField:lField, rightField:rField)
                         if opponent.setResultAttack(pos:pos, res:player.checkAttack(pos:pos)) {
+                            ui.SetRandomInfo(info:phrases[.MOVE_OPPONENT_GOOD]!)
                             ui.DrawWave(pos:pos, to:.LEFT, leftField:lField, rightField:rField)
                         } else {
+                            ui.SetInfos(info:phrases[.SET_COORD]!)
+                            ui.SetRandomInfo(info:phrases[.MOVE_OPPONENT_BAD]!)
                             ui.DrawUPSS(pos:pos, to:.LEFT, leftField:lField, rightField:rField)
                             current = .PLAYER
                         }
@@ -1086,11 +1127,12 @@ class Game {
                     }
                 }
             }
+            //ui.SetInfos(info:phrases[.SET_COORD]!)
         }
         status = .FINISH
     }
     
-    private func Finish() {
+    private func finish() {
         let lField = player.getSelfField()
         let rField = opponent.getSelfField()
         if win == nil {
@@ -1106,11 +1148,11 @@ class Game {
     func update() {
         while true {
             switch status {
-            case .START: Start()
-            case .MENU: Menu()
-            case .MANUAL_SET_SHIPS: ManualSetShips()
-            case .GAME: Game()
-            case .FINISH: Finish()
+            case .START: start()
+            case .MENU: menu()
+            case .MANUAL_SET_SHIPS: manualSetShips()
+            case .GAME: game()
+            case .FINISH: finish()
             case .EXIT: return
             }
         }
@@ -1124,3 +1166,4 @@ let opponent = Participan()
 let game = Game(player:player, opponent:opponent)
 
 game.update()
+
