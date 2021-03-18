@@ -1,9 +1,9 @@
 # warShips
 
-Для компилляции необходимо перйти в папку пакета: 
-  cd warShip
- и выполнить команду
-  swift build
+    Для компилляции необходимо перйти в папку пакета: 
+        cd warShips
+    и выполнить команду
+        swift build
  
- Запуск приложения:
- .build/debug/warShips
+    Запуск приложения:
+         .build/debug/warShips
