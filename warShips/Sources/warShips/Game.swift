@@ -6,6 +6,7 @@ class Game {
     enum GameStatus {
         case START
         case MENU
+        case LANGUAGE
         case MANUAL_SET_SHIPS
         case GAME
         case FINISH
@@ -20,33 +21,35 @@ class Game {
     let player: Participan
     let opponent: Participan
     let ui: UI
-    let cnt:Content
+    var cnt:Content
     var current:Current
     var win:Current?
     var status = GameStatus.START
+    var language = LANGUAGE.ru
     
-    init(player:Participan, opponent:Participan, content:Content, ui:UI) {
+    init(player:Participan, opponent:Participan, ui:UI, language:LANGUAGE) {
         self.player = player
         self.opponent = opponent
-        cnt = content
+        cnt = CONTENT
         self.ui = ui
+        self.language = language
         current = Current.allCases.randomElement()!
         status = GameStatus.START
     }
     
     private func start() {
-        let lField = player.getOpponentField()
-        let rField = opponent.getOpponentField()
+        let lField = player.getSelfField()
+        let rField = player.getOpponentField()
         ui.DrawBanner(leftField:lField, rightField:rField, line:2, col:10, banner:cnt.START_BANNER)
         ui.GetPress(info:cnt.phrases[.GREETING]!)
         status = .MENU
     }
     
     private func menu() {
-        let lField = player.getOpponentField()
-        let rField = opponent.getOpponentField()
+        let lField = player.getSelfField()
+        let rField = player.getOpponentField()
         ui.DrawBanner(leftField:lField, rightField:rField, line:2, col:10, banner:cnt.MENU_BANNER)
-        let k = ui.GetNumber(info:cnt.phrases[.SELECT_MENU]!, numbers:1...4, onError:cnt.phrases[.ERR_MENU]![0])
+        let k = ui.GetNumber(info:cnt.phrases[.SELECT_MENU]!, numbers:1...5, onError:cnt.phrases[.ERR_MENU]![0])
         switch k {
         case 1:
             player.randomSetShips()
@@ -57,13 +60,39 @@ class Game {
             opponent.randomSetShips()
             status = .MANUAL_SET_SHIPS
         case 3:
-            status = .EXIT
+        	status = .LANGUAGE
         case 4:
+            status = .EXIT
+        case 5:
             ui.DrawBanner(leftField:lField, rightField:rField, line:3, col:5, banner:cnt.HELP_BANNER)
             ui.GetPress(info:cnt.phrases[.RESUME]!)
         default:
             break
         }
+    }
+    
+    private func changeLanguage() {
+    	let lField = player.getSelfField()
+        let rField = player.getOpponentField()
+        ui.DrawBanner(leftField:lField, rightField:rField, line:3, col:13, banner:cnt.LANGUAGE_BANNER)
+        let k = ui.GetNumber(info:cnt.phrases[.SELECT_MENU]!, numbers:1...2, onError:cnt.phrases[.ERR_MENU]![0])
+        switch k {
+        case 1:
+            if language == .en {
+            	language = .ru
+            	CONTENT = readResources(language:language)
+            	cnt = CONTENT
+            }
+        case 2:
+            if language == .ru {
+            	language = .en
+            	CONTENT = readResources(language:language)
+            	cnt = CONTENT
+            }
+        default:
+            break
+        }
+        status = .MENU
     }
     
     private func manualSetShips() {
@@ -74,10 +103,10 @@ class Game {
             while count > 0 {
                 var curOrient:String = ""
                 if size > 1 {
-                    curOrient = horizontalOrient ? " (поворот - горизонтально)" : " (поворот - вертикально)"
+                    curOrient = horizontalOrient ? cnt.phrases[.ORIENT]![0] : cnt.phrases[.ORIENT]![1] 
                 }
-                let suff = size > 1 ? "-х" : ""
-                ui.SetInfo(line:1, info: "Установи \(size)\(suff) палубный корабль\(curOrient)")
+                ui.SetInfo(line:1,
+                	info: "\(cnt.phrases[.SET_SHIP_INFO]![0])\(size)\(cnt.phrases[.SET_SHIP_INFO]![1])\(curOrient)")
                 ui.SetInfo(line:2, info:cnt.phrases[.SET_SHIP_MANUAL_INV]![0])
                 if let pos:Position = ui.GetCell(leftField:player.getSelfField(),
                         rightField:player.getOpponentField(),
@@ -155,11 +184,13 @@ class Game {
             } else if curDestroyShips > destroyShips {
                 destroyShips = curDestroyShips
                 ui.SetInfo(info:cnt.phrases[.PLAYER_DESTROY_SHIP]![0])
-                ui.SetInfo(line:1, info:"Счёт: уничтожено кораблей:\(destroyShips) потеряно кораблей:\(lostShips)")
+                ui.SetInfo(line:1,
+                	info:"\(cnt.phrases[.SCORE]![0])\(destroyShips)\(cnt.phrases[.SCORE]![1])\(lostShips)")
             } else if curLostShips > lostShips {
                 lostShips = curLostShips
                 ui.SetInfo(info:cnt.phrases[.PLAYER_LOST_SHIP]![0])
-                ui.SetInfo(line:1, info:"Счёт: уничтожено кораблей:\(destroyShips) потеряно кораблей:\(lostShips)")
+                ui.SetInfo(line:1,
+                	info:"\(cnt.phrases[.SCORE]![0])\(destroyShips)\(cnt.phrases[.SCORE]![1])\(lostShips)")
             }
             switch current {
             case .PLAYER:
@@ -239,6 +270,7 @@ class Game {
             switch status {
             case .START: start()
             case .MENU: menu()
+            case .LANGUAGE: changeLanguage()
             case .MANUAL_SET_SHIPS: manualSetShips()
             case .GAME: game()
             case .FINISH: finish()

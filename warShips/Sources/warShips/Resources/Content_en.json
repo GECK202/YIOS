@@ -1,12 +1,4 @@
 {
-	"HELP_BANNER":[
-		"             HELP:",
-		" ЧТОБЫ СДЕЛАТЬ ХОД, НЕОБХОДИМО ВВЕСТИ БУКВУ ",
-		" СТОЛБЦА  И  НОМЕР СТРОКИ В ЛЮБОМ ПОРЯДКЕ И",
-		" ЛЮБОМ   РЕГИСТРЕ   В АНГЛИЙСКОЙ  РАСКЛАДКЕ",
-		" И НАЖАТЬ Enter.",
-		" БУКВА  И  ЧИСЛО МОГУТ БЫТЬ РАЗДЕЛЕНЫ ОДНИМ",
-		" ПРОБЕЛОМ."],
 	"START_BANNER":[
 		"  *** )─┼)***  ...o   . .      (┼─(",
 		"   ** )─┼)*** ..     .   .  (┼─(┼─(┼─(",
@@ -24,100 +16,124 @@
 		" ║  ║ ║║║║║ ╦╠╦╝╠═╣ ║║║ ║║  ╠═╣ ║ ║║ ║║║║ ",
 		" ╚═╝╚═╝╝╚╝╚═╝╩╚═╩ ╩═╩╝╚═╝╩═╝╩ ╩ ╩ ╩╚═╝╝╚╝ "],
 	"LOST_BANNER":[
-		"  ╔╦╗╦ ╦ ╔═╗╦═╗╔═╗╦ ╔╗╦═╗╦═╗╔═╗ ╔╗ ┬ ┬ ┬",
-		"   ║ ╠╗║ ║ ║╠═╝║ ║║╔╝║║  ╠═╝╠═╣╔╝║ │ │ │",
-		"   ╩ ╚╝╩ ╩ ╩╩  ╚═╝╚╝ ╩╩  ╩  ╩ ╩╝ ╩ o o o",
-		" ╔╦╗╦ ╦╔═╗ ╔═╗╦ ╦╔═╗╦ ╦╦   ═╗╦╔═╔═╗ ╔╗╦",
-		" ║║║╠═╣║╣  ║ ║╚═╣║╣ ╠═╣╠═╗ ╔╩╬╩╗╠═╣╔╝║╠═╗",
-		" ╩ ╩╩ ╩╚═╝ ╚═╝  ╩╚═╝╩ ╩╩═╝ ╩ ╩ ╩╩ ╩╝ ╩╩═╝"],
+		"     ╦ ╦╔═╗╦ ╦  ╦  ╔═╗╔═╗╔╦╗ ┬┬┬",    
+		"     ╚╦╝║ ║║ ║  ║  ║ ║╚═╗ ║  │││",    
+		"      ╩ ╚═╝╚═╝  ╩═╝╚═╝╚═╝ ╩  ooo",    
+		" ╦  ╔═╗╔╦╗  ╔═╗╔═╗  ╔═╗╔═╗╦═╗╦═╗╦ ╦ ",
+		" ║  ╠═╣║║║  ╚═╗║ ║  ╚═╗║ ║╠╦╝╠╦╝╚╦╝",
+		" ╩  ╩ ╩╩ ╩  ╚═╝╚═╝  ╚═╝╚═╝╩╚═╩╚═ ╩ "],
 	"MENU_BANNER":[
-		"               МЕНЮ ИГРЫ:",
+		"            MENU:",
 		"",
-		"   1 - НОВАЯ ИГРА",
-		"   2 - РАССТАВИТЬ КОРАБЛИ ВРУЧНУЮ   ",
-		"   3 - ВЫХОД",
-		"   4 - СПРАВКА"],
+		"  1 - NEW GAME",
+		"  2 - SET SHIP MANUALLY     ",
+		"  3 - CHANGE LANGUAGE",
+		"  4 - EXIT",
+		"  5 - HELP"],
+	"LANGUAGE_BANNER":[
+        " SELECT LANGUAGE: ",
+        "   1 - RUSSIAN",
+        "   2 - ENGLISH"],
 	"MENU_SET_SHIP_BANNER":[
-		" 1 - ВОЗВРАТ К УСТАНОВКЕ КОРАБЛЕЙ ",
-		" 2 - ИЗМЕНИТЬ ПОВОРОТ",
-		" 3 - ВЫХОД В МЕНЮ"],
+		" 1 - RETURN TO SET SHIPS ",
+		" 2 - CHANGE ROTATION",
+		" 3 - EXIT TO MAIN MENU"],
+	"HELP_BANNER":[
+		"                 HELP:",
+		" TO MAKE A MOVE, YOU MUST ENTER THE LETTER ",
+		" COLUMN  AND  ROW  NUMBER IN ANY ORDER AND",
+		" ANY CASE IN THE ENGLISH LAYOUT",
+		" AND PRESS Enter.",
+		" THE LETTER  AND  NUMBER CAN BE  SEPARATED ",
+		" BY ONE SPACE."
+		],
+	"title":"       PLAYER FIELD    │          │       OPPONENT FIELD   │",
 	"phrases":[
 		"PLAYER_LOST",[
-			"🤴 Не отчаивайся,повезёт в другой раз!",
-			"Ты проиграл битву, но не проиграл войну!",
-			"Нажми ENTER для продолжения..."],
+			"🤴 Don't despair, you'll be lucky another time!",
+			"You lost the battle, but you didn't lose the war!",
+			"Press ENTER to continue..."],
 		"SELECT_MENU",[
 			"🤴",
-			"Укажи номер пункта меню и нажми Enter",
+			"Set menu item and press ENTER",
 			""],
 		"SET_SHIP_MANUAL_RESUME",[
-			"🤴 Отлично! Все корабли на своих местах",
-			"Враг не должен догадаться.",
-			"Пора приступать - жми ENTER для продолжения..."],
+			"🤴 Great! All ships are in their places",
+			"The enemy must not guess.",
+			"It's time to start-press ENTER to continue..."],
 		"SET_SHIP_MANUAL_ERR",[
-			"🤴 выбери другую клетку для этого корабля!"],
+			"🤴 choose another cell for this ship!"],
+		"SCORE",[
+			"Score: ships destroyed:",
+			" ships lost:"],
+		"ORIENT",[
+			" (turn-horizontal)",
+			" (turn-vertical)"],
+		"SET_SHIP_INFO",[
+			"Install ",
+			"-deck ship"],
 		"FIRST_MOVE_PLAYER",[
 			"🤴",
-			"Право первого хода досталось тебе",
-			"Битва началась! Жми Enter!"],
+			"The right of the first move went to you",
+			"The battle has begun! Press ENTER!"],
 		"FIRST_MOVE_OPPONENT",[
 			"🤴",
-			"Первым ходит противник",
-			"Битва началась! Жми Enter!"],
+			"The opponent goes first",
+			"The battle has begun! Press ENTER!"],
 		"MOVE_OPPONENT_GOOD",[
-			"🤴 Он попал в наш корабль",
-			"🤴 Противник атакует"],
+			"🤴 He hit our ship",
+			"🤴 The enemy attacks"],
 		"GREETING",[
-			"🤴 Приветствую тебя герой!",
-			"Пришла пора вступить в бой!",
-			"Нажми ENTER для продолжения..."],
+			"🤴 Hello hero!",
+			"It's time to join the battle!",
+			"Press ENTER to continue..."],
 		"SET_COORD_NOT_EMPTY",[
-			"🤴 атака в эту клетку невозможна! Укажи другую!"],
+			"🤴 Attacking this cell is impossible! Specify another one!"],
 		"SET_SHIP_MANUAL_INV",[
-			"Укажи клетку для корабля (или menu - для вызова настроек)"],
+			"Set the cell for the ship (or \"menu\"-to call the settings)"],
 		"MOVE_OPPONENT_BAD",[
-			"🤴 Противник промахнулся",
-			"🤴 Сейчас наш ход"],
+			"🤴 The enemy missed",
+			"🤴 Now our turn"],
 		"RESUME",[
 			"🤴",
-			"Прочти внимательно",
-			"и нажми ENTER для продолжения..."],
+			"Read carefully",
+			"and press ENTER to continue..."],
 		"PLAYER_WIN",[
-			"🤴 противник разгромлен!",
-			"Это заслуженная победа!",
-			"Нажми ENTER для продолжения..."],
+			"🤴 the enemy is destroyed!" ,
+			"This is a well-deserved victory!",
+			"Press ENTER to continue..."],
 		"PLAYER_LOST_SHIP",[
-			"🤴 Он уничтожил наш корабль!"],
+			"🤴 He destroyed our ship!"],
 		"PLAYER_DESTROY_SHIP",[
-			"🤴 Корабль противника уничтожен!"],
+			"🤴 The enemy ship is destroyed!"],
 		"SET_SHIP_MANUAL",[
-			"🤴 Тебе необходимо умело расставить 10 кораблей",
-			"🤴 осталось ещё немного",
-			"🤴 отлично продолжай в том же духе!",
-			"🤴 отлично!!!"],
+			"🤴 You need to skillfully arrange 10 ships",
+			"🤴 there are still a few more",
+			"🤴 excellent keep up the good work!",
+			"🤴 excellent!!!"],
 		"MOVE_PLAYER_BAD",[
-			"🤴 Ты промахнулся",
-			"🤴 Мимо...",
-			"🤴 Бей точнее"],
+			"🤴 You missed",
+			"🤴 Past...",
+			"🤴 Hit more accurately"],
 		"EXIT_GAME",[
 			"🤴",
-			"До новых встреч герой",
+			"See you again hero!",
 			""],
 		"LEAVE_GAME",[
-			"🤴 Ты покинул битву",
-			"Вовзращайся, когда будешь готов",
-			"Нажми ENTER для продолжения..."],
+			"🤴 You left the battle",
+			"Come back when you're ready",
+			"Press ENTER to continue..."],
 		"ERR_MENU",[
-			"🤴 Нет такого пункта! Будь внимательнее!"],
+			"🤴 There is no such item! Be careful!"],
 		"ERR_COORD",[
-			"🤴 Ты ошибся! Будь внимательнее!"],
+			"🤴 You made a mistake! Be careful!"],
 		"MOVE_PLAYER_GOOD",[
-			"🤴 Отличный ход",
-			"🤴 Продолжай атаковать",
-			"🤴 Добей этот корабль"],
+			"🤴 Great move",
+			"🤴 Keep attacking",
+			"🤴 Finish off this ship"],
 		"SET_COORD",[
 			"🤴",
 			"",
-			"Укажи координаты для атаки (или exit для выхода)"]
+			"Set the coordinates for the attack (or \"exit\" for the exit)"]
 	]
 }

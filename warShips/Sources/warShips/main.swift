@@ -15,6 +15,11 @@ enum Cell {
     case STOP
 }
 
+enum LANGUAGE:String {
+	case ru
+	case en
+}
+
 struct Position {
     var x:Int = 0
     var y:Int = 0
@@ -26,6 +31,13 @@ struct Position {
     }
 }
 
+let FIGURE:[Cell:String] = [
+	.NONE: "  ",
+	.SHIP: "# ",
+	.FIRE: "@ ",
+	.DEAD: ". ",
+	.UPSS: "* ",
+	.STOP: "X "]
 
 /*	
 func fileWork(cnt1:Content) {
@@ -58,30 +70,15 @@ func fileWork(cnt1:Content) {
 }
 */
 
-func readRes(fileURL:URL)->Content? {
-	do {
-    let data = try Data(contentsOf: fileURL)
-    let cnt = try JSONDecoder().decode(Content.self, from: data)
-    	return cnt
-	} catch {
- 	   print(error)
- 	   return nil
-	}
-}
 
+let lang = LANGUAGE.ru
+var CONTENT = readResources(language:lang)
 let ui = UI.instance()
 let player = Participan()
 let opponent = Participan()
+let game = Game(player:player, opponent:opponent, ui:ui, language:lang)
+game.update()
 
-let configURL = Bundle.module.url(forResource: "Content_en", withExtension: "json")
-if let cnt = readRes(fileURL:configURL!) {
-	let game = Game(player:player, opponent:opponent, content:cnt, ui:ui)
-	game.update()
-} //else {
-	//let cont = getContent()
-	//let game = Game(player:player, opponent:opponent, content:cont, ui:ui)
-	//game.update()
-//}
 
 
 

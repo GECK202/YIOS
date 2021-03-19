@@ -73,7 +73,7 @@ class Participan {
     private var destroyShips = 0
     
     init() {
-        randomSetShips()
+        clean()
     }
     
     private func checkStartPosition(_ x:Int, _ y:Int, _ size:Int, _ orient:Participan.Orient)-> Bool {
