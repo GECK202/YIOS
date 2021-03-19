@@ -1,5 +1,9 @@
 /*
  Точка входа приложения
+ В этом файле определены константы
+ и функции, отвечающие за загрузку и сохранение
+ выбранного языка приложения
+ Создаются экземпляры и запускается функция game.update()
 */
 
 import Foundation
@@ -15,7 +19,7 @@ enum Cell {
     case STOP
 }
 
-enum LANGUAGE:String {
+enum LANGUAGE:String, Codable {
 	case ru
 	case en
 }
@@ -39,52 +43,38 @@ let FIGURE:[Cell:String] = [
 	.UPSS: "* ",
 	.STOP: "X "]
 
-/*	
-func fileWork(cnt1:Content) {
-	
-	let fileURL = try! FileManager.default
-    	    .url(for: .applicationSupportDirectory, in: .userDomainMask, appropriateFor: nil, create: true)
-    	    .appendingPathComponent("example.json")
+func loadSetLanguage()->LANGUAGE {
 	do {
-    	try JSONEncoder().encode(cnt1)
-    	    .write(to: fileURL)
-    	    print("file=\(fileURL.path)")
-	} catch {
-    	print(error)
-	}	
-	do {
-    let fileURL = try FileManager.default
-        .url(for: .applicationSupportDirectory, in: .userDomainMask, appropriateFor: nil, create: false)
-        .appendingPathComponent("example.json")
-
-    let data = try Data(contentsOf: fileURL)
-    let cnt = try JSONDecoder().decode(Content.self, from: data)
-    
-    print("cnt1 = \(cnt)")
-    //let banners:[Banner] = foo.banners
-    //let banner: Banner = banners[1]
-    //print("line 1 = \(foo.banners[1].lines[1]) phrase=\(foo.phrase[.SET_COORD]![1])")
-	} catch {
- 	   print(error)
+    	let fileURL = try FileManager.default
+    	    .url(for: .applicationSupportDirectory, in: .userDomainMask, appropriateFor: nil, create: false)
+    	    .appendingPathComponent("warShipsSettings")
+	    let data = try Data(contentsOf: fileURL)
+	    let language = try JSONDecoder().decode(LANGUAGE.self, from: data)
+	    return language
+    } catch {
+ 		return .ru
 	}
 }
-*/
 
+func saveSetLanguage(language:LANGUAGE) {
+	let fileURL = try! FileManager.default
+    	    .url(for: .applicationSupportDirectory, in: .userDomainMask, appropriateFor: nil, create: true)
+    	    .appendingPathComponent("warShipsSettings")
+	do {
+    	try JSONEncoder().encode(language)
+    	    .write(to: fileURL)
+	} catch {
+		return
+	}
+}
 
-let lang = LANGUAGE.ru
-var CONTENT = readResources(language:lang)
+let lang = loadSetLanguage()
+var CNT = readResources(language:lang)
 let ui = UI.instance()
 let player = Participan()
 let opponent = Participan()
 let game = Game(player:player, opponent:opponent, ui:ui, language:lang)
+
 game.update()
 
-
-
-
-//print("path=\(configURL!)")
-
-//print(NSHomeDirectory())
-//fileWork(cnt1:cnt)
-//readRes(fileURL:configURL!)
 

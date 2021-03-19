@@ -31,62 +31,8 @@ final class UI {
 
     private var buff:[[Character]] = Array(repeating: Array(repeating: ".", count: 60), count: 16)
 
-	private func ResetBuff2(leftField:[[Cell]], rightField:[[Cell]]) {
-        buff[0] = Array(CONTENT.title)
-        buff[1] = Array("   a b c d e f g h i j │          │    a b c d e f g h i j │")
-        for j in 2..<buff.count {
-            for i in 0..<buff[j].count{
-                if j < 12 {
-                    switch(i) {
-                    case 2...22 where i % 2 == 1:
-                    	let sym = Array(FIGURE[leftField[j - 2][(i - 2) / 2]] ?? "? ")
-                        buff[j][i] = sym[0]
-                        if sym.count > 1 {
-                        	buff[j][i + 1] = sym[1]
-                        }
-                    case 38...58 where i % 2 == 1:
-                    	let sym = Array(FIGURE[rightField[j - 2][(i - 38) / 2]] ?? "? ")
-                        buff[j][i] = sym[0]
-                        if sym.count > 1 {
-                        	buff[j][i + 1] = sym[1]
-                        }
-                    case 23, 34, 59:
-                        buff[j][i] = "│"
-                    case 24...33, 2,35,38:
-                    	buff[j][i] = " "
-                    default:
-                        break
-                    }
-                }
-            }
-            if j > 1 && j < 11 {
-                let num = Array(String(j - 1))[0]
-                buff[j][0] = " "
-                buff[j][1] = num
-                buff[j][36] = " "
-                buff[j][37] = num
-            } else if j == 11 {
-                buff[j][0] = "1"
-                buff[j][1] = "0"
-                buff[j][36] = "1"
-                buff[j][37] = "0"
-            } else if j == 12 {
-                for i in 0..<buff[j].count{
-                    switch(i) {
-                    case 23, 34:
-                        buff[j][i] = "┴"
-                    case 59:
-                        buff[j][i] = "┘"
-                    default:
-                        buff[j][i] = "─"
-                    }
-                }
-            }
-        }
-    }
-
     private func ResetBuff(leftField:[[Cell]], rightField:[[Cell]]) {
-        buff[0] = Array(CONTENT.title)
+        buff[0] = Array(CNT.title)
         buff[1] = Array("   a b c d e f g h i j │          │    a b c d e f g h i j │")
         for j in 2..<buff.count {
         	if j < 12 {

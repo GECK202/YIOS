@@ -21,7 +21,6 @@ class Game {
     let player: Participan
     let opponent: Participan
     let ui: UI
-    var cnt:Content
     var current:Current
     var win:Current?
     var status = GameStatus.START
@@ -30,7 +29,6 @@ class Game {
     init(player:Participan, opponent:Participan, ui:UI, language:LANGUAGE) {
         self.player = player
         self.opponent = opponent
-        cnt = CONTENT
         self.ui = ui
         self.language = language
         current = Current.allCases.randomElement()!
@@ -40,16 +38,16 @@ class Game {
     private func start() {
         let lField = player.getSelfField()
         let rField = player.getOpponentField()
-        ui.DrawBanner(leftField:lField, rightField:rField, line:2, col:10, banner:cnt.START_BANNER)
-        ui.GetPress(info:cnt.phrases[.GREETING]!)
+        ui.DrawBanner(leftField:lField, rightField:rField, line:2, col:10, banner:CNT.START_BANNER)
+        ui.GetPress(info:CNT.phrases[.GREETING]!)
         status = .MENU
     }
     
     private func menu() {
         let lField = player.getSelfField()
         let rField = player.getOpponentField()
-        ui.DrawBanner(leftField:lField, rightField:rField, line:2, col:10, banner:cnt.MENU_BANNER)
-        let k = ui.GetNumber(info:cnt.phrases[.SELECT_MENU]!, numbers:1...5, onError:cnt.phrases[.ERR_MENU]![0])
+        ui.DrawBanner(leftField:lField, rightField:rField, line:2, col:10, banner:CNT.MENU_BANNER)
+        let k = ui.GetNumber(info:CNT.phrases[.SELECT_MENU]!, numbers:1...5, onError:CNT.phrases[.ERR_MENU]![0])
         switch k {
         case 1:
             player.randomSetShips()
@@ -64,8 +62,8 @@ class Game {
         case 4:
             status = .EXIT
         case 5:
-            ui.DrawBanner(leftField:lField, rightField:rField, line:3, col:5, banner:cnt.HELP_BANNER)
-            ui.GetPress(info:cnt.phrases[.RESUME]!)
+            ui.DrawBanner(leftField:lField, rightField:rField, line:3, col:5, banner:CNT.HELP_BANNER)
+            ui.GetPress(info:CNT.phrases[.RESUME]!)
         default:
             break
         }
@@ -74,20 +72,18 @@ class Game {
     private func changeLanguage() {
     	let lField = player.getSelfField()
         let rField = player.getOpponentField()
-        ui.DrawBanner(leftField:lField, rightField:rField, line:3, col:13, banner:cnt.LANGUAGE_BANNER)
-        let k = ui.GetNumber(info:cnt.phrases[.SELECT_MENU]!, numbers:1...2, onError:cnt.phrases[.ERR_MENU]![0])
+        ui.DrawBanner(leftField:lField, rightField:rField, line:3, col:13, banner:CNT.LANGUAGE_BANNER)
+        let k = ui.GetNumber(info:CNT.phrases[.SELECT_MENU]!, numbers:1...2, onError:CNT.phrases[.ERR_MENU]![0])
         switch k {
         case 1:
             if language == .en {
             	language = .ru
-            	CONTENT = readResources(language:language)
-            	cnt = CONTENT
+            	CNT = readResources(language:language)
             }
         case 2:
             if language == .ru {
             	language = .en
-            	CONTENT = readResources(language:language)
-            	cnt = CONTENT
+            	CNT = readResources(language:language)
             }
         default:
             break
@@ -97,22 +93,22 @@ class Game {
     
     private func manualSetShips() {
         var horizontalOrient = true
-        ui.SetInfo(info:cnt.phrases[.SET_SHIP_MANUAL]![0])
+        ui.SetInfo(info:CNT.phrases[.SET_SHIP_MANUAL]![0])
         for size in stride(from:4, to:0, by:-1) {
             var count = 5 - size
             while count > 0 {
                 var curOrient:String = ""
                 if size > 1 {
-                    curOrient = horizontalOrient ? cnt.phrases[.ORIENT]![0] : cnt.phrases[.ORIENT]![1] 
+                    curOrient = horizontalOrient ? CNT.phrases[.ORIENT]![0] : CNT.phrases[.ORIENT]![1] 
                 }
                 ui.SetInfo(line:1,
-                	info: "\(cnt.phrases[.SET_SHIP_INFO]![0])\(size)\(cnt.phrases[.SET_SHIP_INFO]![1])\(curOrient)")
-                ui.SetInfo(line:2, info:cnt.phrases[.SET_SHIP_MANUAL_INV]![0])
+                	info: "\(CNT.phrases[.SET_SHIP_INFO]![0])\(size)\(CNT.phrases[.SET_SHIP_INFO]![1])\(curOrient)")
+                ui.SetInfo(line:2, info:CNT.phrases[.SET_SHIP_MANUAL_INV]![0])
                 if let pos:Position = ui.GetCell(leftField:player.getSelfField(),
                         rightField:player.getOpponentField(),
                         request:[],
                         exitWord:"menu",
-                        onError:cnt.phrases[.ERR_COORD]![0]) {
+                        onError:CNT.phrases[.ERR_COORD]![0]) {
                     var res = true
                     if horizontalOrient {
                         if player.addShip(pos:pos, size:size, orient:.HORIZONTAL) {
@@ -128,17 +124,17 @@ class Game {
                         }
                     }
                     if res == false {
-                        ui.SetInfo(info:cnt.phrases[.SET_SHIP_MANUAL_ERR]![0])
+                        ui.SetInfo(info:CNT.phrases[.SET_SHIP_MANUAL_ERR]![0])
                     } else {
-                        ui.SetRandomInfo(start:1, info:cnt.phrases[.SET_SHIP_MANUAL]!)
+                        ui.SetRandomInfo(start:1, info:CNT.phrases[.SET_SHIP_MANUAL]!)
                     }
                 } else {
                     ui.DrawBanner(leftField:player.getSelfField(),
                     rightField:player.getOpponentField(),
                     line:2, col:24, 
-                    banner:cnt.MENU_SET_SHIP_BANNER)
-                    switch (ui.GetNumber(info:cnt.phrases[.SELECT_MENU]!, numbers:1...3,
-                    	onError:cnt.phrases[.ERR_MENU]![0])) {
+                    banner:CNT.MENU_SET_SHIP_BANNER)
+                    switch (ui.GetNumber(info:CNT.phrases[.SELECT_MENU]!, numbers:1...3,
+                    	onError:CNT.phrases[.ERR_MENU]![0])) {
                     case 2:
                         horizontalOrient = !horizontalOrient
                     case 3:
@@ -152,7 +148,7 @@ class Game {
         }
         player.deleteStop()
         ui.DrawFields(leftField:player.getSelfField(), rightField:player.getOpponentField())
-        ui.GetPress(info:cnt.phrases[.SET_SHIP_MANUAL_RESUME]!)
+        ui.GetPress(info:CNT.phrases[.SET_SHIP_MANUAL_RESUME]!)
         status = .GAME
     }
     
@@ -161,13 +157,13 @@ class Game {
         ui.DrawFields(leftField:player.getSelfField(), rightField:player.getOpponentField())
         switch current {
         case .PLAYER:
-            ui.GetPress(info:cnt.phrases[.FIRST_MOVE_PLAYER]!)
+            ui.GetPress(info:CNT.phrases[.FIRST_MOVE_PLAYER]!)
         case .OPPONENT:
-            ui.GetPress(info:cnt.phrases[.FIRST_MOVE_OPPONENT]!)
+            ui.GetPress(info:CNT.phrases[.FIRST_MOVE_OPPONENT]!)
         }
         var lostShips = 0
         var destroyShips = 0
-        ui.SetInfos(info:cnt.phrases[.SET_COORD]!)
+        ui.SetInfos(info:CNT.phrases[.SET_COORD]!)
         for n in 0...199 {
             let lField = player.getSelfField()
             let rField = player.getOpponentField()
@@ -183,34 +179,34 @@ class Game {
                 return
             } else if curDestroyShips > destroyShips {
                 destroyShips = curDestroyShips
-                ui.SetInfo(info:cnt.phrases[.PLAYER_DESTROY_SHIP]![0])
+                ui.SetInfo(info:CNT.phrases[.PLAYER_DESTROY_SHIP]![0])
                 ui.SetInfo(line:1,
-                	info:"\(cnt.phrases[.SCORE]![0])\(destroyShips)\(cnt.phrases[.SCORE]![1])\(lostShips)")
+                	info:"\(CNT.phrases[.SCORE]![0])\(destroyShips)\(CNT.phrases[.SCORE]![1])\(lostShips)")
             } else if curLostShips > lostShips {
                 lostShips = curLostShips
-                ui.SetInfo(info:cnt.phrases[.PLAYER_LOST_SHIP]![0])
+                ui.SetInfo(info:CNT.phrases[.PLAYER_LOST_SHIP]![0])
                 ui.SetInfo(line:1,
-                	info:"\(cnt.phrases[.SCORE]![0])\(destroyShips)\(cnt.phrases[.SCORE]![1])\(lostShips)")
+                	info:"\(CNT.phrases[.SCORE]![0])\(destroyShips)\(CNT.phrases[.SCORE]![1])\(lostShips)")
             }
             switch current {
             case .PLAYER:
                 if let pos = ui.GetCell(leftField:lField,
                         rightField:rField,
                         exitWord:"exit",
-                        onError:cnt.phrases[.ERR_COORD]![0]) {
+                        onError:CNT.phrases[.ERR_COORD]![0]) {
                     if player.checkCell(pos:pos) == true {
                         ui.DrawAttack(pos:pos, to:.RIGHT, leftField:lField, rightField:rField)
                         if player.setResultAttack(pos:pos, res:opponent.checkAttack(pos:pos)) {
-                            ui.SetInfos(info:cnt.phrases[.SET_COORD]!)
-                            ui.SetRandomInfo(info:cnt.phrases[.MOVE_PLAYER_GOOD]!)
+                            ui.SetInfos(info:CNT.phrases[.SET_COORD]!)
+                            ui.SetRandomInfo(info:CNT.phrases[.MOVE_PLAYER_GOOD]!)
                             ui.DrawWave(pos:pos, to:.RIGHT, leftField:lField, rightField:rField)
                         } else {
-                            ui.SetRandomInfo(info:cnt.phrases[.MOVE_PLAYER_BAD]!)
+                            ui.SetRandomInfo(info:CNT.phrases[.MOVE_PLAYER_BAD]!)
                             ui.DrawUPSS(pos:pos, to:.RIGHT, leftField:lField, rightField:rField)
                             current = .OPPONENT
                         }
                     } else {
-                    	ui.SetInfo(info:cnt.phrases[.SET_COORD_NOT_EMPTY]![0])
+                    	ui.SetInfo(info:CNT.phrases[.SET_COORD_NOT_EMPTY]![0])
                         if opponent.checkEmptySelfField() {
                             win = .PLAYER
                             status = .FINISH
@@ -227,11 +223,11 @@ class Game {
                     if opponent.checkCell(pos:pos) == true {
                         ui.DrawAttack(pos:pos, to:.LEFT, leftField:lField, rightField:rField)
                         if opponent.setResultAttack(pos:pos, res:player.checkAttack(pos:pos)) {
-                            ui.SetRandomInfo(info:cnt.phrases[.MOVE_OPPONENT_GOOD]!)
+                            ui.SetRandomInfo(info:CNT.phrases[.MOVE_OPPONENT_GOOD]!)
                             ui.DrawWave(pos:pos, to:.LEFT, leftField:lField, rightField:rField)
                         } else {
-                            ui.SetInfos(info:cnt.phrases[.SET_COORD]!)
-                            ui.SetRandomInfo(info:cnt.phrases[.MOVE_OPPONENT_BAD]!)
+                            ui.SetInfos(info:CNT.phrases[.SET_COORD]!)
+                            ui.SetRandomInfo(info:CNT.phrases[.MOVE_OPPONENT_BAD]!)
                             ui.DrawUPSS(pos:pos, to:.LEFT, leftField:lField, rightField:rField)
                             current = .PLAYER
                         }
@@ -254,13 +250,13 @@ class Game {
         let lField = player.getSelfField()
         let rField = player.getOpponentField()
         if win == nil {
-            ui.GetPress(info:cnt.phrases[.LEAVE_GAME]!)
+            ui.GetPress(info:CNT.phrases[.LEAVE_GAME]!)
         } else if win == .PLAYER {
-            ui.DrawBanner(leftField:lField, rightField:rField, line:2, col:10, banner:cnt.WIN_BANNER)
-            ui.GetPress(info:cnt.phrases[.PLAYER_WIN]!)
+            ui.DrawBanner(leftField:lField, rightField:rField, line:2, col:10, banner:CNT.WIN_BANNER)
+            ui.GetPress(info:CNT.phrases[.PLAYER_WIN]!)
         } else {
-            ui.DrawBanner(leftField:lField, rightField:rField, line:2, col:10, banner:cnt.LOST_BANNER)
-            ui.GetPress(info:cnt.phrases[.PLAYER_LOST]!)
+            ui.DrawBanner(leftField:lField, rightField:rField, line:2, col:10, banner:CNT.LOST_BANNER)
+            ui.GetPress(info:CNT.phrases[.PLAYER_LOST]!)
         }
         status = .MENU
     }
@@ -277,9 +273,10 @@ class Game {
             case .EXIT:
             	let lField = player.getSelfField()
             	let rField = player.getOpponentField()
-            	ui.SetInfos(info:cnt.phrases[.EXIT_GAME]!)
-            	ui.DrawBanner(leftField:lField,	rightField:rField, line:2, col:10, banner:cnt.START_BANNER)
+            	ui.SetInfos(info:CNT.phrases[.EXIT_GAME]!)
+            	ui.DrawBanner(leftField:lField,	rightField:rField, line:2, col:10, banner:CNT.START_BANNER)
 				ui.Update()
+				saveSetLanguage(language:language)
             	return
             }
         }
